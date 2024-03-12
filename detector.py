@@ -123,22 +123,7 @@ def get_contour_bits(img, cnt, bits):
     print(sig_id)
     cv2.imwrite('out.png', ret_img)
 
-#     for r in range(int(pixel_len)):
-#         for c in range(int(pixel_len)):
-#             x = r*pixel_len + (pixel_len/2)
-#             y = c*pixel_len + (pixel_len/2)
-            
-#             if(binary[int(x),int(y)] >= 128):
-#                 res.append(1)
-#                 cv2.putText(grid_binary, '1',(int(x), int(y)),cv2.FONT_HERSHEY_SIMPLEX,1, (0,0,255), 1, cv2.LINE_AA)
 
-#             else:
-#                 res.append(0)
-#                 cv2.putText(grid_binary, '0',(int(x), int(y)),cv2.FONT_HERSHEY_SIMPLEX,1, (0,0,255), 1, cv2.LINE_AA)
-
-
-#         cv2.imwrite('diagnose{}.png'.format(r), grid_binary)
-#     # print(res)
     
 #     return res
 

@@ -3,6 +3,15 @@ import numpy as np
 import random
 import math 
 
+def perimeter_points(tri):
+    
+    a = np.linspace(tri[0], tri[1], 3, axis=1)
+    b = np.linspace(tri[1], tri[2], 3, axis=1)
+    c = np.linspace(tri[2], tri[0], 3, axis=1)
+    peri_pts = np.vstack((a,b,c)).reshape((-1,1,2))
+    tuple(map(tuple, peri_pts))
+    return peri_pts
+
 def solid_triangle(tri_list, img, fill_color):
     for t in tri_list :
         pt1 = (int(t[0]), int(t[1]))
@@ -45,7 +54,7 @@ def trisample(pts):
     plt.scatter(x,y, s=4)
     plt.show()
     '''
-    
+    # random.seed(312345)
     a = tuple(pts[0].ravel())
     b = tuple(pts[1].ravel())
     c = tuple(pts[2].ravel())
@@ -75,7 +84,9 @@ def rect_contains(rect, point) :
 # Draw a point
 def draw_point(img, p, color ) :
     cv2.circle( img, p, 2, color, -1, cv2.LINE_AA, 0 )
- 
+    sub_p = np.int32(((p/700)*300)+185)
+
+
 # Draw delaunay triangles
 def draw_delaunay(img, subdiv, delaunay_color ) :
  
@@ -83,7 +94,8 @@ def draw_delaunay(img, subdiv, delaunay_color ) :
     size = img.shape
     r = (0, 0, size[1], size[0])
  
-    for t in triangleList :
+
+    for t in triangleList:
  
         pt1 = (int(t[0]), int(t[1]))
         pt2 = (int(t[2]), int(t[3]))
@@ -95,7 +107,8 @@ def draw_delaunay(img, subdiv, delaunay_color ) :
             cv2.line(img, pt1, pt2, delaunay_color, 1, cv2.LINE_AA, 0)
             cv2.line(img, pt2, pt3, delaunay_color, 1, cv2.LINE_AA, 0)
             cv2.line(img, pt3, pt1, delaunay_color, 1, cv2.LINE_AA, 0)
- 
+
+
 # Draw voronoi diagram
 def draw_voronoi(img, subdiv) :
  
@@ -114,66 +127,52 @@ def draw_voronoi(img, subdiv) :
         cv2.polylines(img, ifacets, True, (0, 0, 0), 1, cv2.LINE_AA, 0)
         cv2.circle(img, (centers[i][0], centers[i][1]), 3, (0, 0, 0), -1, cv2.LINE_AA, 0)
  
-if __name__ == '__main__':
- 
-    # Define window names
-    win_delaunay = "Delaunay Triangulation"
-    win_voronoi = "Voronoi Diagram"
- 
-    # Turn on animation while drawing triangles
-    animate = True
- 
-    # Define colors for drawing.
-    delaunay_color = (255, 0, 0)
-    points_color = (0, 0, 255)
- 
-    # Read in the image.
-    img = cv2.imread("lasrtag.png")
- 
-    # Keep a copy around
-    img_orig = img.copy()
- 
-    # Rectangle to be used with Subdiv2D
-    size = img.shape
-    rect = (0, 0, size[1], size[0])
- 
-    # Create an instance of Subdiv2D
-    subdiv = cv2.Subdiv2D(rect)
- 
-    # Create an array of points.
-    points = []
- 
-    # Read in the points from a text file
-    with open("points_lasrtag.txt") as file :
-        for line in file :
-            x, y = line.split()
-            points.append((int(x), int(y)))
- 
-    # Insert points into subdiv
-    for p in points :
-        subdiv.insert(p)
- 
-        # Show animation
-        if animate :
-            img_copy = img_orig.copy()
-            # Draw delaunay triangles
-            draw_delaunay( img_copy, subdiv, (255, 255, 255) )
-            cv2.imshow(win_delaunay, img_copy)
-            cv2.waitKey(100)
- 
-    # Draw delaunay triangles
-    draw_delaunay( img, subdiv, delaunay_color )
- 
-    # Draw points
-    for p in points :
-        draw_point(img, p, (0,0,255))
- 
-    # Allocate space for Voronoi Diagram
-    img_voronoi = np.zeros(img.shape, dtype = img.dtype)
- 
-    # Draw Voronoi diagram
-    draw_voronoi(img_voronoi,subdiv)
- 
-    # Show results
-    cv2.imwrite('win_delaunay.png', img)
-    cv2.imwrite('win_voronoi.png', img_voronoi)
+
+def generate_seed_points(filename, img):
+    dim = img.shape[0]
+    image = img.copy()
+    triangles     = np.ones((12,3,2)) # used for template
+    sub_triangles = np.ones((12,3,2)) # Used for encoding
+
+    with open(filename) as file:
+        i = 0
+        for line in file:
+            x = line.split()
+
+            vertices = np.array([[float(x[0]), float(x[1])], [float(x[2]), float(x[3])], 
+                                [float(x[4]), float(x[5])]], np.float32)
+            
+            sub_vertices = np.array([[float(x[6]), float(x[7])], [float(x[8]), float(x[9])], 
+                             [float(x[10]), float(x[11])]], np.float32)
+        
+            triangles[i][:][:] = vertices*dim
+            v_coords = np.int32((triangles[i][:][:]).reshape((-1,1,2)))
+
+            sub_triangles[i][:][:] = sub_vertices*dim
+            sub_v_coords = np.int32((sub_triangles[i][:][:]).reshape((-1,1,2)))
+
+
+            cv2.polylines(image, [v_coords], True, (0, 0, 0))
+            cv2.polylines(image, [sub_v_coords], True, (0, 0, 0))
+            i=i+1
+        cv2.imwrite('spidron_template.png', image)
+
+
+
+
+    # # Generation of seed points and triangulation
+
+    # ## Uncomment the below to generate seed points for all the 12 triangles
+
+        for i  in range(4):
+            with open('triangle{}.txt'.format(i), 'w') as f:
+                perimeter_pts = perimeter_points(sub_triangles[i][:][:].reshape((-1,1,2)))
+                points = [trisample(sub_triangles[i][:][:].reshape((-1,1,2))) for _ in range(3)]
+                
+                for point in points:
+                    f.write(f"{point[0]}\t{point[1]}\n")
+
+                for point in perimeter_pts:
+                    f.write(f"{point[0][0]}\t{point[0][1]}\n")
+    
+    return triangles, sub_triangles
