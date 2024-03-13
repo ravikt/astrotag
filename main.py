@@ -1,25 +1,26 @@
 import numpy as np
 import cv2
-from lasr_detector import loadMarkerDictionary, detectAruco, find_squares
-from lasr_utils import drawArucos, drawAxesWithPose
+from detector import create_tag_dict, detect_tag, find_squares
+from utils import draw_tag, drawAxesWithPose
 import matplotlib.pyplot as plt
 
-marker = cv2.imread("marker_aruco.png")
-dict_sig, dict_world_loc = loadMarkerDictionary(marker, 49)
+marker = cv2.imread("astrotag.png")
+dict_sig, dict_world_loc = create_tag_dict(marker, 700)
 
+print(dict_world_loc)
 
-for i in range(1400):
-    img = cv2.imread("aruco/new/frame{}.jpg".format(i))
+for i in range(300):
+    img = cv2.imread("/home/ravikt/lasr/fiducial/markers/astrotag/offset_sample/frame{}.png".format(i))
     thresh, cands = find_squares(img)
 
 
-    result = detectAruco(img, dict_sig, dict_world_loc)
+    result = detect_tag(img, dict_sig, dict_world_loc)
 
 
-    out_img = drawArucos(img, result)
+    out_img = draw_tag(img, result)
 
     out_img = drawAxesWithPose(img, result, dict_world_loc)
-    cv2.imwrite("results/aruco_pose/frame{}.png".format(i),out_img)
+    cv2.imwrite("results/frame{}.png".format(i),out_img)
 
 # plt.imshow(out_img)
 # plt.show()

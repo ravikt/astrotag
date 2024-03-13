@@ -9,13 +9,13 @@ from mesh import draw_delaunay, draw_point, trisample, solid_triangle, perimeter
 random.seed(312345)
 ##### Draw Semi-Spidron
 # create white image
-border_color = [0,0,0]
+border_color = (255,255,255)
 delaunay_color = (0, 0, 0)
 points_color = (0, 0, 255)
-fill_color = (255, 0, 0)
+fill_color = (255, 255, 255)
 dim = 700
 img = np.zeros((dim,dim,3), np.uint8)
-img.fill(255)
+# img.fill(255)
 
 
 triangles, sub_triangles = generate_seed_points('astrotag_matrix.txt', img)
@@ -49,34 +49,35 @@ for seeds in nodes_list:
     triangle_list = subdiv.getTriangleList()
     
     # Store the vertices of the mesh triangles
-    with open('triangle_list{}.txt'.format(1), 'w') as f:
+    with open('triangle_list{}.txt'.format(i), 'w') as f:
         for line in triangle_list:
             f.write(f"{np.int32(line)}\n")
 
     i = i+1
     # Draw delaunay triangles
-    draw_delaunay( img, subdiv, delaunay_color )
+    # draw_delaunay( img, subdiv, delaunay_color )
     triangle_list = subdiv.getTriangleList()
 
-    idx = np.random.randint(0, len(triangle_list), 3)
+    random.seed(312345)
+    idx = np.random.randint(0, len(triangle_list), 5)
     solid_triangle(triangle_list[idx], img, fill_color)
     
     ## Draw points
-    for p in nodes :
-        draw_point(img, np.int32(p), points_color)  
+    # for p in nodes :
+    #     draw_point(img, np.int32(p), points_color)  
 
 sub_img = cv2.resize(img, (300, 300), interpolation= cv2.INTER_LINEAR)
 img[200:500, 200:500] = sub_img
 
 ## Draw the two Squares
 
-out_sq = np.array([[0, 0], [700, 0], [700, 700], [0, 700]], np.int32)
-out_sq = out_sq.reshape((-1,1,2))
-cv2.polylines(img, [out_sq], True, (0, 0, 0, 255), 16)
+# out_sq = np.array([[0, 0], [700, 0], [700, 700], [0, 700]], np.int32)
+# out_sq = out_sq.reshape((-1,1,2))
+# cv2.polylines(img, [out_sq], True, border_color, 16)
 
 
 in_sq = np.array([[175, 175], [525, 175], [525, 525], [175, 525]], np.int32)
 in_sq = in_sq.reshape((-1,1,2))
-cv2.polylines(img, [in_sq], True, (0, 0, 0, 255), 16)
+cv2.polylines(img, [in_sq], True, border_color, 8)
 
 cv2.imwrite('tri_delaunay.png', img)

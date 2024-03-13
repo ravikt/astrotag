@@ -1,7 +1,7 @@
 import numpy as np
 import cv2 
 import matplotlib.pyplot as plt
-from img_utils import draw_grid, equalSig, drawArucos, drawAxesWithPose
+from utils import equalSig, drawAxesWithPose
 from read_sig import get_id
 
 
@@ -55,17 +55,9 @@ def find_squares(img):
         x,y,w,h = cv2.boundingRect(c)
         aspect_ratio = float(w)/h
         if (len(approx) == 4 and cv2.contourArea(c)>200 and aspect_ratio<=1.0):
-            print("Contour is convex")
+            # print("Contour is convex")
 
-            # area = cv2.contourArea(c)
-            # hull = cv2.convexHull(c)
-            # hull_area = cv2.contourArea(hull)
-            # solidity = float(area)/hull_area
-
-            
-
-
-            print(aspect_ratio)
+            # print(aspect_ratio)
             # calculates the refined corner locations
             corners = cv2.cornerSubPix(img, np.float32(approx), (5,5), (-1,-1),criteria)
             
@@ -109,94 +101,82 @@ def get_contour_bits(img, cnt, bits):
 
     print(binary.shape)
     cv2.imwrite('thesis_warpedthresh.png', binary)
-    # M = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
-    # binary = cv2.erode(binary, M)
-    # cv2.imwrite('thesis_eroded.png', binary)
-    # grid_binary = cv2.cvtColor(binary,cv2.COLOR_GRAY2BGR)
-    # cv2.imwrite('thesis_grid.png', grid_binary)
-    # out = draw_grid(grid_binary, pixel_len, pixel_len )
-    # cv2.imwrite('thesis_grid.png', out)
-
     
 #     # Calculate the marker bits
-    ret_img, sig_id = get_id(binary)
+    sig_id = get_id(binary)
     print(sig_id)
-    cv2.imwrite('out.png', ret_img)
+    # cv2.imwrite('out.png', ret_img)
+
+    return sig_id
 
 
-    
-#     return res
+def create_tag_dict(marker_image, marker_res):
+    '''
+    marker_image  - the input frame or the warped one ??
+    res_sig       - all possible signatures of marker
+    res_world_loc - location of corner points corresponding to each signature 
+    '''
+    h, w, c = marker_image.shape
+    img = cv2.cvtColor(marker_image, cv2.COLOR_BGR2GRAY)
+    contour_points = np.float32([[0,0], [w,0], [w, h], [0, h]])
 
+    # the coordinate of the world points indicate the size of the image
+    world_points = np.float32([[0,0,0], [30,0,0], [30, 30, 0], [0, 30, 0]])
+    dict_sig = []
+    dict_world_loc= []
+    # plt.imshow(marker_image)
+    # plt.show()
+    # print(contour_points)
+    # sig = get_contour_bits(marker_image, contour_points, bits)
+    # print('Before', sig)
+    # The number 4 indicates four possible orientations of the marker
+    for i in range(4):
+        sig = get_contour_bits(marker_image, contour_points, marker_res)
+        print(i, sig)
+        dict_sig.append(sig)
+        dict_world_loc.append(world_points)
+        # print('After', dict_sig[i])
+        marker_image = cv2.rotate(marker_image, cv2.ROTATE_90_CLOCKWISE)
+        world_points = np.roll(world_points, 1, axis=0)
 
-# def loadMarkerDictionary(marker_image, marker_bits):
-#     '''
-#     marker_image  - the input frame or the warped one ??
-#     res_sig       - all possible signatures of marker
-#     res_world_loc - location of corner points corresponding to each signature 
-#     '''
-#     h, w, c = marker_image.shape
-#     img = cv2.cvtColor(marker_image, cv2.COLOR_BGR2GRAY)
-#     contour_points = np.float32([[0,0], [w,0], [w, h], [0, h]])
+    return dict_sig, dict_world_loc
 
-#     # the coordinate of the world points indicate the size of the image
-#     world_points = np.float32([[0,0,0], [30,0,0], [30, 30, 0], [0, 30, 0]])
-#     bits = marker_bits
-#     dict_sig = []
-#     dict_world_loc= []
-#     # plt.imshow(marker_image)
-#     # plt.show()
-#     # print(contour_points)
-#     # sig = get_contour_bits(marker_image, contour_points, bits)
-#     # print('Before', sig)
-#     # The number 4 indicates four possible orientations of the marker
-#     for i in range(1):
-#         sig = get_contour_bits(marker_image, contour_points, bits)
-#         print(i, sig)
-#         dict_sig.append(sig)
-#         dict_world_loc.append(world_points)
-#         # print('After', dict_sig[i])
-#         marker_image = cv2.rotate(marker_image, cv2.ROTATE_90_CLOCKWISE)
-#         world_points = np.roll(world_points, 1, axis=0)
+def detect_tag(img, dict_sig, dict_world_loc, allowedMisses=6):
+    '''
+    The function returns all the markers found in the image
+    img - color image
 
-#     return dict_sig, dict_world_loc
+    return:
+    results - dictionary of all the markes found in the image
+    '''
+    result = {"tag_corner":[],"tag_index":[]}
 
-# def detectAruco(img, dict_sig, dict_world_loc, allowedMisses=2):
-#     '''
-#     THe function returns all the markers found in the image
-#     img - color image
-
-#     return:
-#     results - dictionary of all the markes found in the image
-#     '''
-#     result = {"ar_corners":[],"ar_index":[]}
-
-#     thresh, cands = find_squares(img)
-#     print("Length of candidate contours and dictionary: ",len(cands), len(dict_sig))
-#     for i in range(len(cands)):
-#         cnt = cands[i]
-#         print("candidate: ",i)
-#         sig = get_contour_bits(img, cnt, 49)
-#         # print("Test sig: ",sig)
-#         for j in range(len(dict_sig)):
-#             # print("Dict:", dict_sig[j])
-#             if equalSig(sig, dict_sig[j], allowedMisses):
-#                 print('match')
-#                 result["ar_corners"].append(cnt)
-#                 result["ar_index"].append(j)
-#                 # break
-
-#     return result
+    thresh, cands = find_squares(img)
+    print("Length of candidate contours and dictionary: ",len(cands), len(dict_sig))
+    for i in range(len(cands)):
+        cnt = cands[i]
+        print("candidate: ",i)
+        sig = get_contour_bits(img, cnt, 700)
+        # print("Test sig: ",sig)
+        for j in range(len(dict_sig)):
+            # print("Dict:", dict_sig[j])
+            if equalSig(sig, dict_sig[j], allowedMisses):
+                print('match')
+                result["tag_corner"].append(cnt)
+                result["tag_index"].append(j)
+                # break
+    return result
 
 
 # TEST INDIVIDUAL CASES
 
-# marker = cv2.imread("marker_aruco.png")
-# dict_sig, dict_world_loc = loadMarkerDictionary(marker, 49)
+# marker = cv2.imread("astrotag.png")
+# dict_sig, dict_world_loc = create_tag_dict(marker, 700)
 
 # print(dict_sig)
 # for i in range(500):
-img = cv2.imread("../frame{}.png".format(0))
+img = cv2.imread("frame{}.png".format(255))
 thresh, cands = find_squares(img)
 
 # print(cands[0])
-ret_im, sig_id = get_contour_bits(img, cands[0], 200)
+sig_id = get_contour_bits(img, cands[0], 700)
