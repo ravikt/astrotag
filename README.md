@@ -1,5 +1,5 @@
 
-##  Vision Based Marker
+##  Recursive Fiducial Marker Based on Spidron
 
 This repository contains the implementation of proposed fiducial marker. The marker template is derived from square spidron. The encoding is inside the marker is based on mesh triangles generated using Delaunay traingulation.  
 
