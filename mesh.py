@@ -22,24 +22,29 @@ def solid_triangle(tri_list, img, fill_color):
         cv2.fillPoly(img, pts=[triangle_cnt], color=fill_color)
     # cv2.drawContours(img, [triangle_cnt], 0, (0,255,0), thickness=-1)
 
-def uniform_points(v, n):
+def point_on_triangle(pts):
     '''
-    Usage example
-    v = np.array([(50,50), (50, 300), (300, 50)])
-    v = np.array([(50,50), (50, 300), (300, 50)])
-    points = uniform_points(v, 10)
-
-    x, y = zip(*points)
-    plt.scatter(x, y, s=1)
-    plt.show()
+    Source: https://stackoverflow.com/questions/47410054/
+    Random point on the triangle with vertices pt1, pt2 and pt3.
     '''
-    x = np.sort(np.random.rand(2, n), axis=0)
-    return np.column_stack([x[0], x[1]-x[0], 1.0-x[1]])@v
+    pt1 = tuple(pts[0].ravel())
+    pt2 = tuple(pts[1].ravel())
+    pt3 = tuple(pts[2].ravel())
+    
+    # x, y = random.random(), random.random()
+    x, y = np.random.randn(), np.random.randn()
+    q = abs(x - y)
+    s, t, u = q, 0.5 * (x + y - q), 1 - 0.5 * (q + x + y)
+    return (
+        s * pt1[0] + t * pt2[0] + u * pt3[0],
+        s * pt1[1] + t * pt2[1] + u * pt3[1],
+    )
 
 
 
 def trisample(pts):
     '''
+    Source: https://stackoverflow.com/questions/47410054/
     Usage
 
     random.seed(312345)
@@ -84,7 +89,7 @@ def rect_contains(rect, point) :
 # Draw a point
 def draw_point(img, p, color ) :
     cv2.circle( img, p, 2, color, -1, cv2.LINE_AA, 0 )
-    sub_p = np.int32(((p/700)*300)+185)
+    # sub_p = np.int32(((p/700)*300)+185)
 
 
 # Draw delaunay triangles
@@ -104,9 +109,9 @@ def draw_delaunay(img, subdiv, delaunay_color ) :
         # print(pt1, pt2)
         if rect_contains(r, pt1) and rect_contains(r, pt2) and rect_contains(r, pt3) :
  
-            cv2.line(img, pt1, pt2, delaunay_color, 1, cv2.LINE_AA, 0)
-            cv2.line(img, pt2, pt3, delaunay_color, 1, cv2.LINE_AA, 0)
-            cv2.line(img, pt3, pt1, delaunay_color, 1, cv2.LINE_AA, 0)
+            cv2.line(img, pt1, pt2, delaunay_color, 2, cv2.LINE_AA, 0)
+            cv2.line(img, pt2, pt3, delaunay_color, 2, cv2.LINE_AA, 0)
+            cv2.line(img, pt3, pt1, delaunay_color, 2, cv2.LINE_AA, 0)
 
 
 # Draw voronoi diagram
@@ -164,7 +169,7 @@ def generate_seed_points(filename, img):
 
     # ## Uncomment the below to generate seed points for all the 12 triangles
 
-        for i  in range(4):
+        for i  in range(8):
             with open('triangle{}.txt'.format(i), 'w') as f:
                 perimeter_pts = perimeter_points(sub_triangles[i][:][:].reshape((-1,1,2)))
                 points = [trisample(sub_triangles[i][:][:].reshape((-1,1,2))) for _ in range(3)]

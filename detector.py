@@ -54,7 +54,8 @@ def find_squares(img):
         approx = cv2.approxPolyDP(c, 0.09*perimeter, True)
         x,y,w,h = cv2.boundingRect(c)
         aspect_ratio = float(w)/h
-        if (len(approx) == 4 and cv2.contourArea(c)>200 and aspect_ratio<=1.0):
+        print('Aspect Ratio:', aspect_ratio)
+        if (len(approx) == 4):# and cv2.contourArea(c)>200 and aspect_ratio<=1.0):
             # print("Contour is convex")
 
             # print(aspect_ratio)
@@ -141,7 +142,7 @@ def create_tag_dict(marker_image, marker_res):
 
     return dict_sig, dict_world_loc
 
-def detect_tag(img, dict_sig, dict_world_loc, allowedMisses=6):
+def detect_tag(img, dict_sig, allowedMisses=20):
     '''
     The function returns all the markers found in the image
     img - color image
@@ -150,24 +151,29 @@ def detect_tag(img, dict_sig, dict_world_loc, allowedMisses=6):
     results - dictionary of all the markes found in the image
     '''
     result = {"tag_corner":[],"tag_index":[]}
+    # Placeholder for collecting missed bits - m
 
     thresh, cands = find_squares(img)
     print("Length of candidate contours and dictionary: ",len(cands), len(dict_sig))
-    for i in range(len(cands)):
-        cnt = cands[i]
-        print("candidate: ",i)
-        sig = get_contour_bits(img, cnt, 700)
+    for cant_num in range(len(cands)):
+        # cnt = cands[i]
+        print("candidate: ",cant_num)
+        sig = get_contour_bits(img, cands[cant_num], 700)
         # print("Test sig: ",sig)
-        for j in range(len(dict_sig)):
+        for i in range(len(dict_sig)):
             # print("Dict:", dict_sig[j])
-            if equalSig(sig, dict_sig[j], allowedMisses):
-                print('match')
-                result["tag_corner"].append(cnt)
-                result["tag_index"].append(j)
+            for j in range(len(dict_sig[i])):
+                m = equalSig(sig, dict_sig[i][j], allowedMisses)
+                # if equalSig(sig, dict_sig[i][j], allowedMisses):
+                if (m <= allowedMisses):
+                    print('match')
+                    result["tag_corner"].append(cands[cant_num])
+                    result["tag_index"].append((i,j))
                 # break
     return result
 
 
+if __name__=="main":
 # TEST INDIVIDUAL CASES
 
 # marker = cv2.imread("astrotag.png")
@@ -175,8 +181,8 @@ def detect_tag(img, dict_sig, dict_world_loc, allowedMisses=6):
 
 # print(dict_sig)
 # for i in range(500):
-img = cv2.imread("frame{}.png".format(255))
-thresh, cands = find_squares(img)
+    img = cv2.imread("frame{}.png".format(255))
+    thresh, cands = find_squares(img)
 
-# print(cands[0])
-sig_id = get_contour_bits(img, cands[0], 700)
+    # print(cands[0])
+    sig_id = get_contour_bits(img, cands[0], 700)

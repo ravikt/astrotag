@@ -1,26 +1,34 @@
 import numpy as np
 import cv2
 from detector import create_tag_dict, detect_tag, find_squares
+import json
 from utils import draw_tag, drawAxesWithPose
 import matplotlib.pyplot as plt
 
-marker = cv2.imread("astrotag.png")
-dict_sig, dict_world_loc = create_tag_dict(marker, 700)
 
-print(dict_world_loc)
+with open('marker_dictionary.json', 'r') as file:
+    params = json.load(file)
 
-for i in range(300):
-    img = cv2.imread("/home/ravikt/lasr/fiducial/markers/astrotag/offset_sample/frame{}.png".format(i))
-    thresh, cands = find_squares(img)
+    index = np.array(params["index"])
+    sig   = np.array(params["dict_sig"])
+    world_loc = np.array(params["dict_world_loc"])
 
 
-    result = detect_tag(img, dict_sig, dict_world_loc)
+# print(sig[0][3])
+# print(world_loc[0][3])
+dict_sig = sig
+dict_world_loc = world_loc
 
+for i in range(14):
+
+    # print('Length of dict_sig:', len(dict_sig))
+
+    img = cv2.imread("../../../dataset/astrotag_multiple/frame{}.png".format(i))
+    # thresh, cands = find_squares(img)
+
+    result = detect_tag(img, dict_sig)
 
     out_img = draw_tag(img, result)
 
     out_img = drawAxesWithPose(img, result, dict_world_loc)
-    cv2.imwrite("results/frame{}.png".format(i),out_img)
-
-# plt.imshow(out_img)
-# plt.show()
+    cv2.imwrite("results/astrotag_multi_chaser/frame{}.png".format(i),out_img)

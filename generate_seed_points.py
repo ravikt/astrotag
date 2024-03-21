@@ -6,7 +6,7 @@ import numpy as np
 import cv2
 import random
 import math
-from mesh import draw_delaunay, draw_point, trisample, solid_triangle, perimeter_points
+from mesh import point_on_triangle, trisample, solid_triangle, perimeter_points
 
 random.seed(312345)
 ##### Draw Semi-Spidron
@@ -16,9 +16,10 @@ img = np.zeros((dim,dim,3), np.uint8)
 img.fill(255)
 
 
-
-triangles     = np.ones((12,3,2)) # used for template
-sub_triangles = np.ones((12,3,2)) # Used for encoding
+# Used for coorindtaes of template
+triangles     = np.ones((12,3,2)) 
+# Used for coordinates of triangles for encoding
+sub_triangles = np.ones((12,3,2)) 
 
 with open('astrotag_matrix.txt') as file:
     i = 0
@@ -48,12 +49,12 @@ with open('astrotag_matrix.txt') as file:
 
 # # Generation of seed points and triangulation
 
-# ## Uncomment the below to generate seed points for all the 12 triangles
+# ## The following generates random points within traingular region
 
-for i  in range(4):
+for i  in range(8):
     with open('triangle{}.txt'.format(i), 'w') as f:
         perimeter_pts = perimeter_points(sub_triangles[i][:][:].reshape((-1,1,2)))
-        points = [trisample(sub_triangles[i][:][:].reshape((-1,1,2))) for _ in range(3)]
+        points = [point_on_triangle(sub_triangles[i][:][:].reshape((-1,1,2))) for _ in range(3)]
         
         for point in points:
             f.write(f"{point[0]}\t{point[1]}\n")
