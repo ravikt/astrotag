@@ -2,7 +2,8 @@
 import random
 import numpy as np
 import cv2
-from mesh import solid_triangle, generate_seed_points, draw_delaunay
+import os
+from mesh import solid_triangle, generate_seed_points, draw_delaunay, draw_point
 
 
 img = np.zeros((700,700,3), np.uint8)
@@ -36,7 +37,7 @@ def create_marker(num_markers):
             triangle_list = []
 
             # Read in the points from a text file
-            with open('astrotag/'+seeds) as file :
+            with open('seed_points/'+seeds) as file :
                 for line in file :
                     x, y = line.split()
                     nodes.append((int(float(x)), int(float(y))))
@@ -58,50 +59,63 @@ def create_marker(num_markers):
                         f.write(f"{np.int32(line)}\t{np.int32(c)}\n")
             # j=j+1
             random.seed(312345)
-            idx = np.random.randint(0, len(triangle_list), 5)
+            idx = np.random.randint(0, len(triangle_list), 7)
             solid_triangle(triangle_list[idx], img, fill_color)
             solid_triangle(triangle_list[idx], b_img, (255, 255, 255))
 
             
             ## Draw points
-            # for p in nodes :
-            #     draw_point(img, np.int32(p), points_color)  
+            for p in nodes :
+                draw_point(img, np.int32(p), points_color)  
 
-        sub_img = cv2.resize(img, (300, 300), interpolation= cv2.INTER_LINEAR)
-        img[200:500, 200:500] = sub_img
+        
+        ############## Move to a separate funtion ############
 
-        b_sub_img = cv2.resize(b_img, (300, 300), interpolation= cv2.INTER_LINEAR)
-        b_img[200:500, 200:500] = b_sub_img
+        # sub_img = cv2.resize(img, (350, 350), interpolation= cv2.INTER_LINEAR)
+        # img[175:525, 175:525] = sub_img
 
+        b_sub_img = cv2.resize(b_img, (350, 350), interpolation= cv2.INTER_LINEAR)
+        b_img[175:525, 175:525] = b_sub_img
+
+        
+        b_sub_sub_im = cv2.resize(b_sub_img, (175, 175), interpolation= cv2.INTER_LINEAR)
+        b_img[262:437, 262:437] = b_sub_sub_im
 
         ## Draw the two Squares
 
         out_sq = np.array([[0, 0], [700, 0], [700, 700], [0, 700]], np.int32)
         out_sq = out_sq.reshape((-1,1,2))
-        cv2.polylines(img, [out_sq], True, border_color, 10)
+        # cv2.polylines(img, [out_sq], True, border_color, 10)
         cv2.polylines(b_img, [out_sq], True, (255,255,255), 10)
-
-
 
         in_sq = np.array([[175, 175], [525, 175], [525, 525], [175, 525]], np.int32)
         in_sq = in_sq.reshape((-1,1,2))
-        cv2.polylines(img, [in_sq], True, border_color, 10)
+        # cv2.polylines(img, [in_sq], True, border_color, 10)
         cv2.polylines(b_img, [in_sq], True, (255,255,255), 10)
 
+        ins_sq = np.array([[262, 262], [437, 262], [437, 437], [262, 437]], np.int32)
+        ins_sq = ins_sq.reshape((-1,1,2))
+        cv2.polylines(b_img, [ins_sq], True, (255,255,255), 5)
 
-        cv2.imwrite('thesis_marker_{}.png'.format(i), img)
-        cv2.imwrite('thesis_b_marker_{}.png'.format(i), b_img)
+        #######################################################
+
+        if not os.path.exists('marker'):
+            os.makedirs('marker')
+
+        cv2.imwrite('marker/thesis_marker_{}.png'.format(i), img)
+        cv2.imwrite('marker/thesis_b_marker_{}.png'.format(i), b_img)
 
 
 
 if __name__ == "__main__":
-    random.seed(312345)
+    # random.seed(312345)
     ##### Draw Semi-Spidron
     # create white image
     border_color = (0, 0, 0)
     fill_color = (0, 0, 0)
-    delaunay_color = (18, 18, 222)
+    #delaunay_color = (18, 18, 222)
+    delaunay_color = (255, 0, 0)
     points_color = (0, 0, 255)
 
 
-    create_marker(1)
+    create_marker(20)

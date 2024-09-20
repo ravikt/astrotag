@@ -2,27 +2,71 @@ import cv2
 import json
 import numpy as np
 
-    # with open ('misses.txt', 'a') as file:
-    #     file.write(f"{missed_number}\n")
+def hamming_distance(seq1, seq2):
+    """
+    Calculate the Hamming distance between two sequences.
+    
+    Args:
+    seq1, seq2: Sequences to compare (strings, lists, or any iterable)
+    
+    Returns:
+    int: The Hamming distance
+    
+    Raises:
+    ValueError: If sequences are of unequal length
+    """
+    if len(seq1) != len(seq2):
+        raise ValueError("Sequences must be of equal length")
+    
+    return sum(el1 != el2 for el1, el2 in zip(seq1, seq2))
 
-def equalSig(sig1, sig2, allowedMisses=0):
-    # global missed_number
-    misses = 0
-    # missed_number = 0
-    for i in range(len(sig1)):
+def are_sequences_similar(seq1, seq2, max_misses=0):
+    """
+    Check if two sequences are similar within a specified tolerance.
+    
+    Args:
+    seq1, seq2: Sequences to compare
+    max_misses: Maximum allowed differences (default 0)
+    
+    Returns:
+    bool: True if sequences are similar within the tolerance, False otherwise
+    """
+    return hamming_distance(seq1, seq2) <= max_misses
+
+# Example usage:
+# distance = hamming_distance("1011101", "1001001")
+# is_similar = are_sequences_similar("1011101", "1001001", max_misses=2)
+
+# def equalSig(sig1, sig2, allowedMisses=0):
+#     # global missed_number
+#     misses = 0
+#     # missed_number = 0
+#     for i in range(len(sig1)):
         
-        if sig1[i] != sig2[i]:
-            misses = misses + 1
+#         if sig1[i] != sig2[i]:
+#             misses = misses + 1
 
-    # print('misses:', misses)
-    return misses#<=allowedMisses
-    # return missed_number
+#     # print('misses:', misses)
+#     return misses#<=allowedMisses
+#     # return missed_number
 
 def draw_tag(img, res):
 
-    '''
-    The function drawContour takes the contour list as a python array not np array
-    '''
+    """
+    Draw detected tags on an image.
+
+    Args:
+    img (numpy.ndarray): The input image on which to draw.
+    res (dict): A dictionary containing detection results with keys:
+        - 'tag_index': List of tag indices.
+        - 'tag_corner': List of tag corner coordinates.
+
+    Returns:
+    numpy.ndarray: The image with drawn tags.
+
+    Note:
+    The function uses cv2.drawContours which expects contours as Python lists, not numpy arrays.
+    """
     print(len(res))
     print(res["tag_index"])
     for i in range(len(res["tag_index"])):
@@ -38,9 +82,8 @@ def draw_tag(img, res):
     return img
 
 def drawAxesWithPose(img, res, dict_world_loc):
-
- 
-    with open('camera_params/camera_intrinsic_chaser.json', 'r') as camera_data:
+    
+    with open('camera_utils/camera_intrinsic.json', 'r') as camera_data:
         camera_params = json.load(camera_data)
 
     mtx = np.array(camera_params["camera_matrix"], dtype="double")
@@ -54,6 +97,7 @@ def drawAxesWithPose(img, res, dict_world_loc):
 
         corner = res["tag_corner"][i]
         idx, rot_idx = res["tag_index"][i]
+
 
         corner = np.asarray(corner).reshape((4,2)).astype('float32')
         print(dict_world_loc[idx][rot_idx])
@@ -72,6 +116,5 @@ def drawAxesWithPose(img, res, dict_world_loc):
 
         cv2.putText(img, str(idx), tuple(img_pts[0].ravel().astype(int)), cv2.FONT_HERSHEY_SIMPLEX, 
                     color=(0, 255, 255), thickness=2, fontScale=0.7)
-
 
     return img

@@ -29,38 +29,41 @@ def order_contour(cnt):
 
 def find_squares(img):
 
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # ret, thresh = cv2.threshold(img, 100, 255, cv2.THRESH_BINARY)
-    thresh = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,\
-            cv2.THRESH_BINARY,11, 7)
+    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,\
+            cv2.THRESH_BINARY,151, 31)
 
-    cv2.imwrite('thesis_adaptivethresh.png', thresh)
+    cv2.imwrite('adaptivethresh.png', thresh)
     # plt.show()
 
-    # findContour fins whiite blobs over black background, therefore following steps performs 
+    # findContour finds white blobs over black background, therefore following steps performs 
     # the binary inversion 
     thresh = cv2.bitwise_not(thresh)
-    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE) #
+    print(len(contours))
     # ret, labels, stats, centroids = cv2.connectedComponentsWithStats(dst)
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 40, 0.001)
 
-    thresh = cv2.cvtColor(thresh,cv2.COLOR_GRAY2BGR)
-    cv2.imwrite('thesis_contour.png',cv2.drawContours(thresh, contours, -1, (0, 0, 255)))
+    rgb_im_contour = img.copy()
+    cv2.imwrite('marker_contour.png',cv2.drawContours(rgb_im_contour, contours, -1, (0, 0, 255)))
     # plt.imshow(thresh)
     cands = []
+    min_area = 550
+
+    rgb_im_corner = img.copy()
     for c in contours:
         perimeter = cv2.arcLength(c, True)
         approx = cv2.approxPolyDP(c, 0.09*perimeter, True)
         x,y,w,h = cv2.boundingRect(c)
         aspect_ratio = float(w)/h
-        print('Aspect Ratio:', aspect_ratio)
-        if (len(approx) == 4):# and cv2.contourArea(c)>200 and aspect_ratio<=1.0):
+        # print('Aspect Ratio:', aspect_ratio)
+        if (len(approx) == 4) and cv2.contourArea(c)>min_area and aspect_ratio<=1.1: #
             # print("Contour is convex")
 
             # print(aspect_ratio)
             # calculates the refined corner locations
-            corners = cv2.cornerSubPix(img, np.float32(approx), (5,5), (-1,-1),criteria)
+            corners = cv2.cornerSubPix(gray, np.float32(approx), (5,5), (-1,-1),criteria)
             
             # print(corners)
             cnt_corners = order_contour(corners)
@@ -68,15 +71,15 @@ def find_squares(img):
             # cands.append(np.int_(corners))
             cands.append(corners)
 
-            cv2.circle(thresh, np.int_(corners[0].ravel()), 2, (255,0,0), 2)
-            cv2.circle(thresh, np.int_(corners[1].ravel()), 2, (0,255,0), 2)
-            cv2.circle(thresh, np.int_(corners[2].ravel()), 2, (0,0,255), 2)
-            cv2.circle(thresh, np.int_(corners[3].ravel()), 2, (255,128,0), 2)
+            cv2.circle(rgb_im_corner, np.int_(corners[0].ravel()), 2, (255,0,0), 2)
+            cv2.circle(rgb_im_corner, np.int_(corners[1].ravel()), 2, (0,255,0), 2)
+            cv2.circle(rgb_im_corner, np.int_(corners[2].ravel()), 2, (0,0,255), 2)
+            cv2.circle(rgb_im_corner, np.int_(corners[3].ravel()), 2, (255,128,0), 2)
 
     # thresh = cv2.cvtColor(thresh,cv2.COLOR_GRAY2BGR)
     # print(len(cands))
-    cv2.imwrite('thesis_thresh.png',thresh)
-    return thresh, cands
+    cv2.imwrite('marker_thresh.png',rgb_im_corner)
+    return rgb_im_corner, cands
 
 
 
@@ -97,15 +100,15 @@ def get_contour_bits(img, cnt, bits):
     M = cv2.getPerspectiveTransform(cnt, corners)
     warped = cv2.warpPerspective(img, M, (bits, bits) , flags=cv2.INTER_LINEAR)
     warped = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
-    cv2.imwrite('thesis_transformed.png', warped)
+    cv2.imwrite('marker_transformed.png', warped)
     ret, binary = cv2.threshold(warped,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 
-    print(binary.shape)
-    cv2.imwrite('thesis_warpedthresh.png', binary)
+    # print(binary.shape)
+    cv2.imwrite('marker_warpedthresh.png', binary)
     
 #     # Calculate the marker bits
     sig_id = get_id(binary)
-    print(sig_id)
+    # print(sig_id)
     # cv2.imwrite('out.png', ret_img)
 
     return sig_id
@@ -133,7 +136,7 @@ def create_tag_dict(marker_image, marker_res):
     # The number 4 indicates four possible orientations of the marker
     for i in range(4):
         sig = get_contour_bits(marker_image, contour_points, marker_res)
-        print(i, sig)
+        # print(i, sig)
         dict_sig.append(sig)
         dict_world_loc.append(world_points)
         # print('After', dict_sig[i])
@@ -142,7 +145,7 @@ def create_tag_dict(marker_image, marker_res):
 
     return dict_sig, dict_world_loc
 
-def detect_tag(img, dict_sig, allowedMisses=20):
+def detect_tag(img, dict_sig, allowedMisses=30):
     '''
     The function returns all the markers found in the image
     img - color image
@@ -152,28 +155,31 @@ def detect_tag(img, dict_sig, allowedMisses=20):
     '''
     result = {"tag_corner":[],"tag_index":[]}
     # Placeholder for collecting missed bits - m
-
+    count = 1
     thresh, cands = find_squares(img)
-    print("Length of candidate contours and dictionary: ",len(cands), len(dict_sig))
+    # print("Length of candidate contours and dictionary: ",len(cands), len(dict_sig))
     for cant_num in range(len(cands)):
         # cnt = cands[i]
-        print("candidate: ",cant_num)
+        # print("candidate: ",cant_num)
         sig = get_contour_bits(img, cands[cant_num], 700)
         # print("Test sig: ",sig)
         for i in range(len(dict_sig)):
             # print("Dict:", dict_sig[j])
             for j in range(len(dict_sig[i])):
                 m = equalSig(sig, dict_sig[i][j], allowedMisses)
+                # print(m)
                 # if equalSig(sig, dict_sig[i][j], allowedMisses):
                 if (m <= allowedMisses):
                     print('match')
                     result["tag_corner"].append(cands[cant_num])
                     result["tag_index"].append((i,j))
-                # break
-    return result
+    
+    if len(result['tag_index'])==0:
+        count=0
+    return result, count
 
 
-if __name__=="main":
+if __name__=="__main__":
 # TEST INDIVIDUAL CASES
 
 # marker = cv2.imread("astrotag.png")
@@ -181,8 +187,8 @@ if __name__=="main":
 
 # print(dict_sig)
 # for i in range(500):
-    img = cv2.imread("frame{}.png".format(255))
+    img = cv2.imread("test_images/frame{}_100cm.png".format(0))
     thresh, cands = find_squares(img)
 
     # print(cands[0])
-    sig_id = get_contour_bits(img, cands[0], 700)
+    #sig_id = get_contour_bits(img, cands[0], 700)

@@ -3,6 +3,8 @@ import numpy as np
 import random
 import math 
 
+
+
 def perimeter_points(tri):
     
     a = np.linspace(tri[0], tri[1], 3, axis=1)
@@ -39,6 +41,26 @@ def point_on_triangle(pts):
         s * pt1[0] + t * pt2[0] + u * pt3[0],
         s * pt1[1] + t * pt2[1] + u * pt3[1],
     )
+
+def biased_point(pts):
+
+    pt1 = tuple(pts[0].ravel())
+    pt2 = tuple(pts[1].ravel())
+    pt3 = tuple(pts[2].ravel())
+    mean = 1/3
+    std_dev = 0.05
+
+    # barycentric coordinate for the triangle
+    r = np.random.normal(loc=mean, scale=std_dev, size=3)
+
+    # Ensure the sum of barycentric coordinates is 1
+    r = np.abs(r) / np.sum(np.abs(r))
+
+    #compute the cartesian coordinates of the point
+    x = r[0] * pt1[0] + r[1] * pt2[0] + r[2] * pt3[0]
+    y = r[0] * pt1[1] + r[1] * pt2[1] + r[2] * pt3[1]
+
+    return (x,y)
 
 
 

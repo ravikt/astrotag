@@ -6,9 +6,11 @@ import numpy as np
 import cv2
 import random
 import math
-from mesh import point_on_triangle, trisample, solid_triangle, perimeter_points
+import os
+from mesh import biased_point, trisample, solid_triangle, perimeter_points
+from point_pick import barycentric_points
 
-random.seed(312345)
+# random.seed(312345)
 ##### Draw Semi-Spidron
 # create white image
 dim = 700
@@ -49,15 +51,21 @@ with open('astrotag_matrix.txt') as file:
 
 # # Generation of seed points and triangulation
 
-# ## The following generates random points within traingular region
+# ## The following generates random points within triangular region
 
 for i  in range(8):
-    with open('triangle{}.txt'.format(i), 'w') as f:
+
+    if not os.path.exists('seed_points'):
+        os.makedirs('seed_points')
+    with open('seed_points/triangle{}.txt'.format(i), 'w') as f:
         perimeter_pts = perimeter_points(sub_triangles[i][:][:].reshape((-1,1,2)))
-        points = [point_on_triangle(sub_triangles[i][:][:].reshape((-1,1,2))) for _ in range(3)]
+        # points = [biased_point(sub_triangles[i][:][:].reshape((-1,1,2))) for _ in range(3)]
+        points = barycentric_points(sub_triangles[i][:][:].reshape((-1,1,2)))
         
         for point in points:
+            # print(point[0], point[1])
             f.write(f"{point[0]}\t{point[1]}\n")
 
         for point in perimeter_pts:
+            # print(point[0][0], point[0][1])
             f.write(f"{point[0][0]}\t{point[0][1]}\n")
