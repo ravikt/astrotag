@@ -2,21 +2,18 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-# img = cv2.imread("marker_0.png")
-# #img = cv2.imread("test.png", cv2.IMREAD_UNCHANGED)
-# gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-# # #blur = cv2.GaussianBlur(gray,(7,7),0)
-# # #cv2.imwrite('blur.png', blur)
-# ret, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-# # ret, binary = cv2.threshold(gray,127,255,cv2.THRESH_BINARY)
+def equalSig(sig1, sig2, allowedMisses=0):
+    # global missed_number
+    misses = 0
+    # missed_number = 0
+    for i in range(len(sig1)):
+        
+        if sig1[i] != sig2[i]:
+            misses = misses + 1
 
-
-# # The binarization doesn't result in exact bimodal distribution
-# # This given the binary signature output misleading
-# # print(ret)
-# plt.hist(img.ravel(),256,[0,256])
-# plt.show()
-
+    # print('misses:', misses)
+    return misses#<=allowedMisses
+    # return missed_number
 
 def calculate_centroid(p):
 
@@ -58,9 +55,3 @@ def get_id(binary):
 
     return signature
 
-
-if __name__ == "__main__":
-    sig = get_id(binary)
-
-    cv2.imwrite('out.png', img)
-    # print(sig)

@@ -1,8 +1,7 @@
 import numpy as np
 import cv2 
 import matplotlib.pyplot as plt
-from utils import equalSig, drawAxesWithPose
-from read_sig import get_id
+from read_sig import get_id, equalSig
 
 
 def order_contour(cnt):

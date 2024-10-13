@@ -2,53 +2,9 @@ import cv2
 import json
 import numpy as np
 
-def hamming_distance(seq1, seq2):
-    """
-    Calculate the Hamming distance between two sequences.
-    
-    Args:
-    seq1, seq2: Sequences to compare (strings, lists, or any iterable)
-    
-    Returns:
-    int: The Hamming distance
-    
-    Raises:
-    ValueError: If sequences are of unequal length
-    """
-    if len(seq1) != len(seq2):
-        raise ValueError("Sequences must be of equal length")
-    
-    return sum(el1 != el2 for el1, el2 in zip(seq1, seq2))
 
-def are_sequences_similar(seq1, seq2, max_misses=0):
-    """
-    Check if two sequences are similar within a specified tolerance.
-    
-    Args:
-    seq1, seq2: Sequences to compare
-    max_misses: Maximum allowed differences (default 0)
-    
-    Returns:
-    bool: True if sequences are similar within the tolerance, False otherwise
-    """
-    return hamming_distance(seq1, seq2) <= max_misses
 
-# Example usage:
-# distance = hamming_distance("1011101", "1001001")
-# is_similar = are_sequences_similar("1011101", "1001001", max_misses=2)
 
-# def equalSig(sig1, sig2, allowedMisses=0):
-#     # global missed_number
-#     misses = 0
-#     # missed_number = 0
-#     for i in range(len(sig1)):
-        
-#         if sig1[i] != sig2[i]:
-#             misses = misses + 1
-
-#     # print('misses:', misses)
-#     return misses#<=allowedMisses
-#     # return missed_number
 
 def draw_tag(img, res):
 
