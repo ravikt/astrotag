@@ -1,30 +1,16 @@
 import cv2
 import json
 import numpy as np
-
-
-
+from relative_nav import solve_relative_pose, solve_relative_pose_lie
 
 
 def draw_tag(img, res):
 
-    """
-    Draw detected tags on an image.
-
-    Args:
-    img (numpy.ndarray): The input image on which to draw.
-    res (dict): A dictionary containing detection results with keys:
-        - 'tag_index': List of tag indices.
-        - 'tag_corner': List of tag corner coordinates.
-
-    Returns:
-    numpy.ndarray: The image with drawn tags.
-
-    Note:
-    The function uses cv2.drawContours which expects contours as Python lists, not numpy arrays.
-    """
-    print(len(res))
-    print(res["tag_index"])
+    '''
+    The function drawContour takes the contour list as a python array not np array
+    '''
+    # print(len(res))
+    # print(res["tag_index"])
     for i in range(len(res["tag_index"])):
     
         corner = res["tag_corner"][i]
@@ -37,40 +23,49 @@ def draw_tag(img, res):
 
     return img
 
-def drawAxesWithPose(img, res, dict_world_loc):
-    
-    with open('camera_utils/camera_intrinsic.json', 'r') as camera_data:
+def project_axes(axis, rvec, tvec, camera_matrix, dist_coeffs):
+    """Project the 3D axes into the image coordinate system."""
+    return cv2.projectPoints(axis, rvec, tvec, camera_matrix, dist_coeffs)
+
+def draw_axes_on_image(img, img_pts, idx):
+    """Draw the axes on the image."""
+    cv2.line(img, tuple(img_pts[0].ravel().astype(int)), tuple(img_pts[1].ravel().astype(int)), (255, 0, 0), 2, cv2.LINE_AA)
+    cv2.line(img, tuple(img_pts[0].ravel().astype(int)), tuple(img_pts[2].ravel().astype(int)), (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.line(img, tuple(img_pts[0].ravel().astype(int)), tuple(img_pts[3].ravel().astype(int)), (0, 0, 255), 2, cv2.LINE_AA)
+    cv2.putText(img, str(idx), tuple(img_pts[0].ravel().astype(int)), cv2.FONT_HERSHEY_SIMPLEX,
+                color=(0, 255, 255), thickness=2, fontScale=0.7)
+
+def drawAxesWithPose(img, res, dict_world_loc, use_lie_algebra=True):
+    """Main function to draw axes based on pose estimation."""
+    with open('camera_params/refraction_camera_intrinsic_astrotag.json', 'r') as camera_data:
         camera_params = json.load(camera_data)
 
     mtx = np.array(camera_params["camera_matrix"], dtype="double")
-    dist= np.array(camera_params["distortion_coefficients"])
+    dist = np.array(camera_params["distortion_coefficients"])
 
-    axis = np.float32([[0,0,0], [25,0,0], [0, 25, 0], [0, 0, -25]])
+    axis = np.float32([[0, 0, 0], [25, 0, 0], [0, 25, 0], [0, 0, -25]])
 
-    # Convert the points from marker coordinate system to image coordinate system 
-    print('length of tag index:', res["tag_index"])
+    # Iterate through detected markers
     for i in range(len(res["tag_index"])):
-
         corner = res["tag_corner"][i]
         idx, rot_idx = res["tag_index"][i]
 
+        corner = np.asarray(corner).reshape((4, 2)).astype('float32')
 
-        corner = np.asarray(corner).reshape((4,2)).astype('float32')
-        print(dict_world_loc[idx][rot_idx])
-        # Find the rotation and translation vectors.
-        ret, rvecs, tvecs = cv2.solvePnP(dict_world_loc[idx][rot_idx], corner, mtx, dist)
+        # Choose the pose estimation method
+        object_points = dict_world_loc[idx][rot_idx]  # 3D points corresponding to the detected marker
 
-        # draw axis on the marker
-        # project points from marker coordinate system in the image coordinate system 
+        if use_lie_algebra:
+            pose_estimate = solve_relative_pose_lie(object_points, corner, mtx, dist)
+            rvec = pose_estimate[:3]  # Extract rotation vector
+            tvec = pose_estimate[3:]   # Extract translation vector
+        else:
+            rvec, tvec = solve_relative_pose(object_points, corner, mtx, dist)
 
-        img_pts, _ = cv2.projectPoints(axis, rvecs, tvecs, mtx, dist)
+        # Project the axes from the marker coordinate system to the image coordinate system
+        img_pts, _ = project_axes(axis, rvec, tvec, mtx, dist)
 
-        # print(tuple(img_pts[0].ravel()))
-        cv2.line(img, tuple(img_pts[0].ravel().astype(int)), tuple(img_pts[1].ravel().astype(int)), (255,0,0), 2, cv2.LINE_AA) 
-        cv2.line(img, tuple(img_pts[0].ravel().astype(int)), tuple(img_pts[2].ravel().astype(int)), (0,255,0), 2, cv2.LINE_AA)
-        cv2.line(img, tuple(img_pts[0].ravel().astype(int)), tuple(img_pts[3].ravel().astype(int)), (0,0,255), 2, cv2.LINE_AA)
-
-        cv2.putText(img, str(idx), tuple(img_pts[0].ravel().astype(int)), cv2.FONT_HERSHEY_SIMPLEX, 
-                    color=(0, 255, 255), thickness=2, fontScale=0.7)
+        # Draw axes on the image
+        draw_axes_on_image(img, img_pts, idx)
 
     return img

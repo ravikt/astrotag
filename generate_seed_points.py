@@ -7,8 +7,7 @@ import cv2
 import random
 import math
 import os
-from mesh import biased_point, trisample, solid_triangle, perimeter_points
-from point_pick import barycentric_points
+from mesh import barycentric_points, perimeter_points
 
 # random.seed(312345)
 ##### Draw Semi-Spidron
