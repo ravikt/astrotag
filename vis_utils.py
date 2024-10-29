@@ -1,7 +1,7 @@
 import cv2
 import json
 import numpy as np
-from relative_nav import solve_relative_pose, solve_relative_pose_lie
+from relative_nav import solve_relative_pose_lie, solve_pose_with_opencv
 
 
 def draw_tag(img, res):
@@ -15,6 +15,7 @@ def draw_tag(img, res):
     
         corner = res["tag_corner"][i]
         corner = np.asarray(corner).reshape((4,2)).astype(int)
+        print(corner)
         cv2.drawContours(img, [corner], -1, (255, 0, 0))
         org = (corner[0][0], corner[0][1])
 
@@ -60,7 +61,7 @@ def drawAxesWithPose(img, res, dict_world_loc, use_lie_algebra=True):
             rvec = pose_estimate[:3]  # Extract rotation vector
             tvec = pose_estimate[3:]   # Extract translation vector
         else:
-            rvec, tvec = solve_relative_pose(object_points, corner, mtx, dist)
+            rvec, tvec = solve_pose_with_opencv(object_points, corner, mtx, dist)
 
         # Project the axes from the marker coordinate system to the image coordinate system
         img_pts, _ = project_axes(axis, rvec, tvec, mtx, dist)

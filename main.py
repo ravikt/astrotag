@@ -2,11 +2,11 @@ import numpy as np
 import cv2
 from detector import detect_tag
 import json
-from vis_utils import drawAxesWithPose
+from vis_utils import drawAxesWithPose, draw_tag
 import matplotlib.pyplot as plt
 
 
-with open('marker_dictionary.json', 'r') as file:
+with open('lasrtag_dictionary.json', 'r') as file:
     params = json.load(file)
 
     index = np.array(params["index"])
@@ -19,15 +19,16 @@ with open('marker_dictionary.json', 'r') as file:
 dict_sig = sig
 dict_world_loc = world_loc
 
-for i in range(1):
+for i in range(300):
 
     # print('Length of dict_sig:', len(dict_sig))
 
-    img = cv2.imread("frame{}.png".format(i))
+    img = cv2.imread("/home/ravikt/lasr/tfr/dataset/lasrtag_48/lasrtag_moving/frame{}.png".format(i))
 
     result = detect_tag(img, dict_sig)
 
-    # out_img = draw_tag(img, result)
 
-    out_img = drawAxesWithPose(img, result, dict_world_loc, use_lie_algebra=True)
-    cv2.imwrite("out_frame{}.png".format(i),out_img)
+    out_img = draw_tag(img, result)
+
+    out_img = drawAxesWithPose(out_img, result, dict_world_loc, use_lie_algebra=False)
+    cv2.imwrite("results/out_frame{}.png".format(i),out_img)

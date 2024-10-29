@@ -5,9 +5,10 @@ import matplotlib.pyplot as plt
 def equalSig(sig1, sig2, allowedMisses=0):
     # global missed_number
     misses = 0
-    # missed_number = 0
+  
+
     for i in range(len(sig1)):
-        
+        # print(len(sig1), len(sig2))
         if sig1[i] != sig2[i]:
             misses = misses + 1
 
@@ -52,6 +53,31 @@ def get_id(binary):
             
             # Uncomment the following to draw the mesh
             # cv2.imwrite('results/frame.png',cv2.polylines(binary, [x], True, (35, 150, 200), 2))
+
+    return signature
+
+def get_median_pixel_value(binary, cx, cy):
+    # Extract the 3x3 neighborhood around (cx, cy)
+    neighborhood = binary[cx-1:cx+2, cy-1:cy+2].flatten()
+    # Calculate and return the median value
+    return np.median(neighborhood)
+
+def get_id_median(binary):
+    nodes = []
+    signature = []
+
+    with open('astrotag/triangle_list.txt') as file:
+        for line in file:
+            x1, y1, x2, y2, x3, y3, cx, cy = line.split()
+            x = np.array([[int(x1), int(y1)], [int(x2), int(y2)], [int(x3), int(y3)]], np.int32)
+            x.reshape((-1, 1, 2))
+
+            # Get the median pixel value in the 8-point neighborhood around the centroid
+            median_value = get_median_pixel_value(binary, int(cx), int(cy))
+            if median_value >= 128:
+                signature.append(1)
+            else:
+                signature.append(0)
 
     return signature
 
