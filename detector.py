@@ -104,7 +104,7 @@ def find_squares(img):
         is_square_flag, approx = is_square(cnt)
         if is_square_flag:
             # Refine the corner points
-            print(np.float32(approx).shape)
+            # print(np.float32(approx).shape)
             corners = cv2.cornerSubPix(gray, np.float32(approx), (5, 5), (-1, -1), criteria)
             
             # Order the corners in a consistent manner
@@ -143,7 +143,7 @@ def get_contour_bits(img, cnt, bits):
     cv2.imwrite('thesis_transformed.png', warped)
     ret, binary = cv2.threshold(warped,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 
-    print(binary.shape)
+    # print(binary.shape)
     cv2.imwrite('thesis_warpedthresh.png', binary)
     
 #     # Calculate the marker bits
@@ -176,7 +176,7 @@ def create_tag_dict(marker_image, marker_res):
     # The number 4 indicates four possible orientations of the marker
     for i in range(4):
         sig = get_contour_bits(marker_image, contour_points, marker_res)
-        print(i, sig)
+        # print(i, sig)
         dict_sig.append(sig)
         dict_world_loc.append(world_points)
         # print('After', dict_sig[i])
@@ -185,37 +185,68 @@ def create_tag_dict(marker_image, marker_res):
 
     return dict_sig, dict_world_loc
 
+# def detect_tag(img, dict_sig, allowedMisses=10):
+#     '''
+#     The function returns all the markers found in the image
+#     img - color image
+
+#     return:
+#     results - dictionary of all the markes found in the image
+#     '''
+#     result = {"tag_corner":[],"tag_index":[]}
+#     # Placeholder for collecting missed bits - m
+
+#     cands = find_squares(img)
+#     print("Length of candidate contours and dictionary: ",len(cands), len(dict_sig))
+#     for cant_num in range(len(cands)):
+#         # cnt = cands[i]
+#         # print("candidate: ",cant_num)
+#         # print("Candidate: ",cands[cant_num].shape)
+#         sig = get_contour_bits(img, cands[cant_num], 700)
+#         # print("Test sig: ",sig)
+#         for i in range(len(dict_sig)):
+#             # print("Dict:", dict_sig[j])
+#             for j in range(len(dict_sig[i])):
+#                 m = equalSig(sig, dict_sig[i][j], allowedMisses)
+#                 print(m)
+#                 if (m <= allowedMisses):
+#                     print(cands[cant_num])
+#                     print('match')
+#                     result["tag_corner"].append(cands[cant_num])
+#                     result["tag_index"].append((i,j))
+#                 # break
+#     return result
+
 def detect_tag(img, dict_sig, allowedMisses=10):
     '''
     The function returns all the markers found in the image
     img - color image
 
     return:
-    results - dictionary of all the markes found in the image
+    results - dictionary of all the markers found in the image
     '''
-    result = {"tag_corner":[],"tag_index":[]}
-    # Placeholder for collecting missed bits - m
-
+    result = {"tag_corner": [], "tag_index": []}
+    count = 1
     cands = find_squares(img)
-    print("Length of candidate contours and dictionary: ",len(cands), len(dict_sig))
-    for cant_num in range(len(cands)):
-        # cnt = cands[i]
-        # print("candidate: ",cant_num)
-        # print("Candidate: ",cands[cant_num].shape)
-        sig = get_contour_bits(img, cands[cant_num], 700)
-        # print("Test sig: ",sig)
-        for i in range(len(dict_sig)):
-            # print("Dict:", dict_sig[j])
-            for j in range(len(dict_sig[i])):
-                m = equalSig(sig, dict_sig[i][j], allowedMisses)
-                print(m)
-                if (m <= allowedMisses):
-                    print(cands[cant_num])
+
+    for cant_num, cand in enumerate(cands):
+        sig = get_contour_bits(img, cand, 700)
+        for i, sig_list in enumerate(dict_sig):
+            for j, known_sig in enumerate(sig_list):
+                m = equalSig(sig, known_sig, allowedMisses)
+                if m <= allowedMisses:
                     print('match')
-                    result["tag_corner"].append(cands[cant_num])
-                    result["tag_index"].append((i,j))
-                # break
-    return result
+                    result["tag_corner"].append(cand)
+                    result["tag_index"].append((i, j))
+                    break  # Exit the inner loop early if a match is found
+            else:
+                continue  # Continue if the inner loop wasn't broken
+            break  # Exit the outer loop early if a match is found
+
+    if not result['tag_index']:
+        count = 0
+
+    return result, count
 
 
 if __name__ == "__main__":
