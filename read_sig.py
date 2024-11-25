@@ -2,6 +2,20 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+def get_keypoints(filename):
+    keypoints = []
+
+    with open(filename) as file:
+        for line in file:
+            x1, y1, x2, y2, x3, y3, cx, cy = line.split()
+            # Convert string coordinates to float and append to keypoints list
+            keypoints.append((float(x1), float(y1)))
+            keypoints.append((float(x2), float(y2)))
+            keypoints.append((float(x3), float(y3)))
+
+    return keypoints
+
 def equalSig(sig1, sig2, allowedMisses=0):
     # global missed_number
     misses = 0
