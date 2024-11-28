@@ -1,37 +1,36 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import mfd_descriptor
 
-def equalSig(sig1, sig2, allowedMisses=0):
-    # global missed_number
-    misses = 0
-  
 
-    for i in range(len(sig1)):
-        # print(len(sig1), len(sig2))
-        if sig1[i] != sig2[i]:
-            misses = misses + 1
 
-    # print('misses:', misses)
-    return misses#<=allowedMisses
-    # return missed_number
+def get_keypoints(filename, scale=1.0):
+    keypoints = []
+
+    with open(filename) as file:
+        for line in file:
+            x1, y1, x2, y2, x3, y3, cx, cy = line.split()
+            # Convert string coordinates to float and scale them
+            keypoints.append((float(x1) * scale, float(y1) * scale))
+            keypoints.append((float(x2) * scale, float(y2) * scale))
+            keypoints.append((float(x3) * scale, float(y3) * scale))
+
+    return keypoints
+
 
 def calculate_centroid(p):
 
     centroid = ((p[0][0]+p[1][0]+p[2][0])/3, (p[0][1]+p[1][1]+p[2][1])/3) 
     return centroid
 
+
 def get_id(binary):
-    
-    # img = cv2.cvtColor(binary, cv2.COLOR_GRAY2BGR)
-    #blur = cv2.GaussianBlur(gray,(7,7),0)
-    #cv2.imwrite('blur.png', blur)
-    # ret, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
 
     nodes = []
     signature = []
 
-    with open('astrotag/triangle_list.txt') as file :
+    with open('triangle_list.txt') as file :
         for line in file :
             x1, y1, x2, y2, x3, y3, cx, cy = line.split()
             # nodes.append([[int(x1), int(y1)], [int(x2), int(y2)], [int(x3), int(y3)]])
@@ -53,31 +52,6 @@ def get_id(binary):
             
             # Uncomment the following to draw the mesh
             # cv2.imwrite('results/frame.png',cv2.polylines(binary, [x], True, (35, 150, 200), 2))
-
-    return signature
-
-def get_median_pixel_value(binary, cx, cy):
-    # Extract the 3x3 neighborhood around (cx, cy)
-    neighborhood = binary[cx-1:cx+2, cy-1:cy+2].flatten()
-    # Calculate and return the median value
-    return np.median(neighborhood)
-
-def get_id_median(binary):
-    nodes = []
-    signature = []
-
-    with open('astrotag/keypoints.txt') as file:
-        for line in file:
-            x1, y1, x2, y2, x3, y3, cx, cy = line.split()
-            x = np.array([[int(x1), int(y1)], [int(x2), int(y2)], [int(x3), int(y3)]], np.int32)
-            x.reshape((-1, 1, 2))
-
-            # Get the median pixel value in the 8-point neighborhood around the centroid
-            median_value = get_median_pixel_value(binary, int(cx), int(cy))
-            if median_value >= 128:
-                signature.append(1)
-            else:
-                signature.append(0)
 
     return signature
 

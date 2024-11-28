@@ -6,7 +6,7 @@ from detector import create_tag_dict
 signature = []
 world_loc = []
 for i in range(20):
-    marker_path = 'astrotag/black/b_marker_{}.png'.format(i)
+    marker_path = 'marker/lasrtag_dictionary/marker_{}.png'.format(i)
 
     marker = cv2.imread(marker_path)
 
@@ -14,12 +14,6 @@ for i in range(20):
 
     signature.append(dict_sig)
     world_loc.append(dict_world_loc)
-
-# print(len(signature))
-# print(len(world_loc))
-
-# print('Marker signature')
-# print(signature[0][0])
 
 index = np.array(list(range(0, 20)))
 world_loc =np.array(world_loc)
