@@ -66,8 +66,8 @@ def verify_codewords(data: Dict[str, Dict[str, str]], message_length_bits: int, 
     return True
 
 def main():
-    M = 10  # Number of unique binary strings
-    K = 32  # Message length
+    M = 20  # Number of unique binary strings
+    K = 8  # Message length
     N = 48  # Codeword length
     output_file = "message_pairs.json"
 
