@@ -59,21 +59,27 @@ def create_marker(num_markers, codeword, keypoints="triangle_list.txt"):
         sub_sub_im = cv2.resize(sub_img, (125, 125), interpolation= cv2.INTER_LINEAR)
         img[287:412, 287:412] = sub_sub_im
 
-
-        in_sq = np.array([[200, 200], [500, 200], [500, 500], [200, 500]], np.int32)
-        in_sq = in_sq.reshape((-1,1,2))
-        # cv2.polylines(img, [in_sq], True, border_color, 10)
-        cv2.polylines(img, [in_sq], True, (255,255,255), 20)
-
-        ins_sq = np.array([[287, 287], [412, 287], [412, 412], [287, 412]], np.int32)
-        ins_sq = ins_sq.reshape((-1,1,2))
-        cv2.polylines(img, [ins_sq], True, (255,255,255), 10)
+        # Draw border the first border
+        in_top_left = (200, 200)
+        in_bottom_right = (500, 500)
+        in_t = 20
+        cv2.rectangle(img, (in_top_left[0]-in_t//2, in_top_left[1]-in_t//2),
+                            (in_bottom_right[0]+in_t//2, in_bottom_right[1]+in_t//2), 
+                            (255,255,255), in_t)
+        
+        # Draw border the second border
+        ins_top_left = (287, 287)
+        ins_bottom_right = (412, 412)
+        ins_t = 10
+        cv2.rectangle(img, (ins_top_left[0]-ins_t//2, ins_top_left[1]-ins_t//2),
+                            (ins_bottom_right[0]+ins_t//2, ins_bottom_right[1]+ins_t//2), 
+                            (255,255,255), ins_t)
 
 
         markers.append(img)
         
         # Save marker
-        cv2.imwrite(f'marker_{i}.png', img)
+        cv2.imwrite(f'testmarker_{i}.png', img)
         
     return markers
 
