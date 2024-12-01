@@ -50,7 +50,7 @@ def find_squares(img):
     cv2.imwrite('marker_contour.png',cv2.drawContours(rgb_im_contour, contours, -1, (0, 0, 255)))
     # plt.imshow(thresh)
     cands = []
-    min_area = 550
+    min_area = 2000
 
     rgb_im_corner = img.copy()
     for c in contours:
@@ -59,7 +59,7 @@ def find_squares(img):
         x,y,w,h = cv2.boundingRect(c)
         aspect_ratio = float(w)/h
         # print('Aspect Ratio:', aspect_ratio)
-        if (len(approx) == 4) and cv2.contourArea(c)>min_area and aspect_ratio<=1.1: #
+        if (len(approx) == 4) and cv2.contourArea(c)>min_area and 0.9<=aspect_ratio<=1.1: #
             # print("Contour is convex")
 
             # print(aspect_ratio)
@@ -95,7 +95,7 @@ def get_contour_bits(img, cnt, bits):
 
     # the corners of expected output image
     corners = np.float32([[0,0], [bits,0], [bits, bits], [0, bits]])
-    # print(cnt.shape)
+    # print(cnt)
     # print(corners.shape)
 
     M = cv2.getPerspectiveTransform(cnt, corners)
@@ -192,12 +192,13 @@ def detect_tag(img, dict_sig):
 
     # Placeholder for collecting missed bits - m
     thresh, cands = find_squares(img)
-    # print("Length of candidate contours and dictionary: ",len(cands), len(dict_sig))
+    print("Length of candidate contours and dictionary: ",len(cands), len(dict_sig))
     for cant_num in range(len(cands)):
         # cnt = cands[i]
         # print("candidate: ",cant_num)
-        encoded_grs_bits = get_contour_bits(img, cands[cant_num], 700)
-        print(encoded_grs_bits)
+        sig = get_contour_bits(img, cands[cant_num], 700)
+        encoded_grs_bits = ''.join(map(str, sig))
+        # print(encoded_grs_bits)
         
         encoded_grs_int_list = binary_string_to_int_list(encoded_grs_bits)
         decoded_grs = grs_encoder.decode(encoded_grs_int_list)
@@ -206,8 +207,9 @@ def detect_tag(img, dict_sig):
         for i in range(len(dict_sig)):
              
             message = dict_sig[i]
+            # print(type(message))
         # print(f"Decoded GRS Message: {decoded_grs_bits[:message_length_bits]}")
-            if decoded_grs_bits[:24] == message:
+            if decoded_grs_bits[:24] == str(message):
                 # print(f"Verification failed for GRS codeword at ID {key}")
             
                 print('match')

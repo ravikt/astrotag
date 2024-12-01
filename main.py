@@ -22,7 +22,7 @@ with open('grs/output/message_pairs24.json', 'r') as file:
     index=np.array(index)
     dict_sig=np.array(sig)
 
-img = cv2.imread('test.jpg')
+img = cv2.imread('test24.jpg')
 
 result = detect_tag(img, dict_sig)
 
