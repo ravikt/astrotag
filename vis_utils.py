@@ -26,7 +26,7 @@ def draw_tag(img, res):
     
         corner = res["tag_corner"][i]
         corner = np.asarray(corner).reshape((4,2)).astype(int)
-        cv2.drawContours(img, [corner], -1, (255, 0, 0))
+        cv2.drawContours(img, [corner], -1, (0, 0, 255))
         org = (corner[0][0], corner[0][1])
 
         idx = res["tag_index"][i]

@@ -6,12 +6,16 @@ from message_generator import generate_unique_binary_strings, binary_string_to_i
 
 grs_encoder = Generalized_Reed_Solomon(2, 48, 24, 1, 1, None, False, False)
 
-message = "010010001110001000011011"
-        # codeword = "010010001110001000011011110110101001111111001000"
-
+message="100101101101011001101110"
 # Verify GRS codeword
 # encoded_grs_bits = "010010001110001000011011110110101001000000110111" # last 12 bits are flipped
 encoded_grs_bits = "010010001110001000011011110110101001111111001000"
+
+codeword= "100101101101011001101110110111011111000101110000"
+ref     = "000111111010100110011101101111101111100001010100"
+a       = "000111111010100110011101101111101111100001011100"
+b       = "000111111010100110011101101111101111100001011100"
+
 
 encoded_grs_int_list = binary_string_to_int_list(encoded_grs_bits)
 decoded_grs = grs_encoder.decode(encoded_grs_int_list)

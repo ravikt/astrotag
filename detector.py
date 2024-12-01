@@ -50,7 +50,7 @@ def find_squares(img):
     cv2.imwrite('marker_contour.png',cv2.drawContours(rgb_im_contour, contours, -1, (0, 0, 255)))
     # plt.imshow(thresh)
     cands = []
-    min_area = 2000
+    min_area = 500
 
     rgb_im_corner = img.copy()
     for c in contours:
@@ -104,7 +104,7 @@ def get_contour_bits(img, cnt, bits):
     cv2.imwrite('marker_transformed.png', warped)
     ret, binary = cv2.threshold(warped,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 
-    # print(binary.shape)
+    print(binary.shape)
     cv2.imwrite('marker_warpedthresh.png', binary)
     
 #     # Calculate the marker bits
@@ -198,7 +198,7 @@ def detect_tag(img, dict_sig):
         # print("candidate: ",cant_num)
         sig = get_contour_bits(img, cands[cant_num], 700)
         encoded_grs_bits = ''.join(map(str, sig))
-        # print(encoded_grs_bits)
+        print(encoded_grs_bits)
         
         encoded_grs_int_list = binary_string_to_int_list(encoded_grs_bits)
         decoded_grs = grs_encoder.decode(encoded_grs_int_list)
