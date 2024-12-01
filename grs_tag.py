@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 import os
 
-def create_marker(num_markers, codeword, keypoints="triangle_list.txt"):
+def create_marker(num_markers, codeword, keypoints="keypoints.txt"):
     """
     Create markers with triangles colored according to codeword bits
     Args:
@@ -79,12 +79,12 @@ def create_marker(num_markers, codeword, keypoints="triangle_list.txt"):
         markers.append(img)
         
         # Save marker
-        cv2.imwrite(f'testmarker_{i}.png', img)
+        cv2.imwrite(f'marker16_{i}.png', img)
         
     return markers
 
 # Example usage:
-codeword = "010010001110001000011011110110101001111111001000"  # 48-bit codeword
+codeword =    "100101101101011001101110110111011111000101110000" # (24,48)
 
 if __name__ == "__main__":
     markers = create_marker(1, codeword)
