@@ -2,7 +2,9 @@ import numpy as np
 import cv2 
 import matplotlib.pyplot as plt
 from read_sig import get_id, equalSig
-
+# from grs.rs_codec import Generalized_Reed_Solomon
+# from grs.message_generator import binary_string_to_int_list,int_list_to_binary_string
+from grs import Generalized_Reed_Solomon, binary_string_to_int_list, int_list_to_binary_string
 
 def order_contour(cnt):
     # extract x,y coordinates for all the corner points
@@ -39,7 +41,7 @@ def find_squares(img):
     # findContour finds white blobs over black background, therefore following steps performs 
     # the binary inversion 
     thresh = cv2.bitwise_not(thresh)
-    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE) #
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE) #
     print(len(contours))
     # ret, labels, stats, centroids = cv2.connectedComponentsWithStats(dst)
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 40, 0.001)
@@ -144,7 +146,40 @@ def create_tag_dict(marker_image, marker_res):
 
     return dict_sig, dict_world_loc
 
-def detect_tag(img, dict_sig, allowedMisses=30):
+# def detect_tag(img, dict_sig, allowedMisses=30):
+#     '''
+#     The function returns all the markers found in the image
+#     img - color image
+
+#     return:
+#     results - dictionary of all the markes found in the image
+#     '''
+#     result = {"tag_corner":[],"tag_index":[]}
+#     # Placeholder for collecting missed bits - m
+#     count = 1
+#     thresh, cands = find_squares(img)
+#     # print("Length of candidate contours and dictionary: ",len(cands), len(dict_sig))
+#     for cant_num in range(len(cands)):
+#         # cnt = cands[i]
+#         # print("candidate: ",cant_num)
+#         sig = get_contour_bits(img, cands[cant_num], 700)
+#         # print("Test sig: ",sig)
+#         for i in range(len(dict_sig)):
+#             # print("Dict:", dict_sig[j])
+#             for j in range(len(dict_sig[i])):
+#                 m = equalSig(sig, dict_sig[i][j], allowedMisses)
+#                 # print(m)
+#                 # if equalSig(sig, dict_sig[i][j], allowedMisses):
+#                 if (m <= allowedMisses):
+#                     print('match')
+#                     result["tag_corner"].append(cands[cant_num])
+#                     result["tag_index"].append((i,j))
+    
+#     if len(result['tag_index'])==0:
+#         count=0
+#     return result, count
+
+def detect_tag(img, dict_sig):
     '''
     The function returns all the markers found in the image
     img - color image
@@ -153,29 +188,34 @@ def detect_tag(img, dict_sig, allowedMisses=30):
     results - dictionary of all the markes found in the image
     '''
     result = {"tag_corner":[],"tag_index":[]}
+    grs_encoder = Generalized_Reed_Solomon(2, 48, 24, 1, 1, None, False, False)
+
     # Placeholder for collecting missed bits - m
-    count = 1
     thresh, cands = find_squares(img)
     # print("Length of candidate contours and dictionary: ",len(cands), len(dict_sig))
     for cant_num in range(len(cands)):
         # cnt = cands[i]
         # print("candidate: ",cant_num)
-        sig = get_contour_bits(img, cands[cant_num], 700)
+        encoded_grs_bits = get_contour_bits(img, cands[cant_num], 700)
+        print(encoded_grs_bits)
+        
+        encoded_grs_int_list = binary_string_to_int_list(encoded_grs_bits)
+        decoded_grs = grs_encoder.decode(encoded_grs_int_list)
+        decoded_grs_bits = int_list_to_binary_string(decoded_grs)
         # print("Test sig: ",sig)
         for i in range(len(dict_sig)):
-            # print("Dict:", dict_sig[j])
-            for j in range(len(dict_sig[i])):
-                m = equalSig(sig, dict_sig[i][j], allowedMisses)
-                # print(m)
-                # if equalSig(sig, dict_sig[i][j], allowedMisses):
-                if (m <= allowedMisses):
-                    print('match')
-                    result["tag_corner"].append(cands[cant_num])
-                    result["tag_index"].append((i,j))
+             
+            message = dict_sig[i]
+        # print(f"Decoded GRS Message: {decoded_grs_bits[:message_length_bits]}")
+            if decoded_grs_bits[:24] == message:
+                # print(f"Verification failed for GRS codeword at ID {key}")
+            
+                print('match')
+                result["tag_corner"].append(cands[cant_num])
+                result["tag_index"].append((i))
     
-    if len(result['tag_index'])==0:
-        count=0
-    return result, count
+    
+    return result
 
 
 if __name__=="__main__":

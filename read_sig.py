@@ -30,7 +30,7 @@ def get_id(binary):
     nodes = []
     signature = []
 
-    with open('triangle_list.txt') as file :
+    with open('keypoints.txt') as file :
         for line in file :
             x1, y1, x2, y2, x3, y3, cx, cy = line.split()
             # nodes.append([[int(x1), int(y1)], [int(x2), int(y2)], [int(x3), int(y3)]])

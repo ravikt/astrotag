@@ -1,7 +1,7 @@
 # File: message_generator.py
 import random
 from typing import List, Dict
-from rs_codec import ReedSolomonCodec
+from .rs_codec import ReedSolomonCodec
 
 def generate_unique_binary_strings(num_strings=10, message_length=32) -> List[str]:
     unique_strings = set()

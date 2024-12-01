@@ -1,8 +1,8 @@
 import random
 from typing import List, Dict
-from rs_codec import ReedSolomonCodec, Generalized_Reed_Solomon
-from file_handler import FileHandler
-from message_generator import generate_unique_binary_strings,binary_string_to_int_list,int_list_to_binary_string,pad_encoded_message
+from .rs_codec import ReedSolomonCodec, Generalized_Reed_Solomon
+from .file_handler import FileHandler
+from .message_generator import generate_unique_binary_strings,binary_string_to_int_list,int_list_to_binary_string,pad_encoded_message
 
 
 def create_message_codeword_pairs(

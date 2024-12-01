@@ -1,6 +1,6 @@
 import numpy as np
 import galois as gl
-import basereedsolomon
+from . import basereedsolomon
 import reedsolo
 import unittest
 

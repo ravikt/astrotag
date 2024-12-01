@@ -3,9 +3,6 @@ import json
 import numpy as np
 
 
-
-
-
 def draw_tag(img, res):
 
     """

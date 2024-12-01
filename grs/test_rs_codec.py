@@ -1,5 +1,5 @@
 import unittest
-from rs_codec import ReedSolomonCodec
+from .rs_codec import ReedSolomonCodec
 
 class TestReedSolomonCodec(unittest.TestCase):
     def test_symbols_to_bits(self):

@@ -1,6 +1,6 @@
 import galois as gl
 from pathos.multiprocessing import ProcessingPool as Pool
-import helper
+from . import helper
 
 class Base_Reed_Solomon():
     def __init__(self, field_size:int, message_length:int, payload_length:int,symbol_size:int,multi_processing,irr_poly=None,debug=True,p=1,):
