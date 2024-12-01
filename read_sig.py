@@ -20,6 +20,32 @@ def calculate_centroid(p):
     centroid = ((p[0][0]+p[1][0]+p[2][0])/3, (p[0][1]+p[1][1]+p[2][1])/3) 
     return centroid
 
+
+def get_median_pixel_value(binary, cx, cy):
+    # Extract the 3x3 neighborhood around (cx, cy)
+    neighborhood = binary[cx-1:cx+2, cy-1:cy+2].flatten()
+    # Calculate and return the median value
+    return np.median(neighborhood)
+
+def get_id_median(binary):
+    nodes = []
+    signature = []
+
+    with open('keypoints.txt') as file:
+        for line in file:
+            x1, y1, x2, y2, x3, y3, cx, cy = line.split()
+            x = np.array([[int(x1), int(y1)], [int(x2), int(y2)], [int(x3), int(y3)]], np.int32)
+            x.reshape((-1, 1, 2))
+
+            # Get the median pixel value in the 8-point neighborhood around the centroid
+            median_value = get_median_pixel_value(binary, int(cx), int(cy))
+            if median_value >= 128:
+                signature.append(1)
+            else:
+                signature.append(0)
+
+    return signature
+
 # def get_id_old(binary):
     
 #     # img = cv2.cvtColor(binary, cv2.COLOR_GRAY2BGR)
