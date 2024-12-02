@@ -22,10 +22,25 @@ with open('grs/output/message_pairs24.json', 'r') as file:
     index=np.array(index)
     dict_sig=np.array(sig)
 
-img = cv2.imread('test.png')
+# img = cv2.imread('test.png')
 
-result = detect_tag(img, dict_sig)
+# result = detect_tag(img, dict_sig)
 
-out_img = draw_tag(img, result)
+# out_img = draw_tag(img, result)
 
-cv2.imwrite('output.png', out_img)
+# cv2.imwrite('output.png', out_img)
+# Process all images in test_images folder
+test_folder = 'test_images'
+for filename in os.listdir(test_folder):
+    if filename.endswith(('.png', '.jpg', '.jpeg')):
+        input_path = os.path.join(test_folder, filename)
+        output_path = os.path.join('results', filename)
+        
+        # Read image and detect tags
+        img = cv2.imread(input_path)
+        result = detect_tag(img, dict_sig)
+        
+        # Draw detection results and save
+        out_img = draw_tag(img, result)
+        os.makedirs('results', exist_ok=True)
+        cv2.imwrite(output_path, out_img)
