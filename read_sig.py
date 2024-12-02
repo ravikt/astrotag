@@ -21,63 +21,28 @@ def calculate_centroid(p):
     return centroid
 
 
-def get_median_pixel_value(binary, cx, cy):
-    # Extract the 3x3 neighborhood around (cx, cy)
-    neighborhood = binary[cx-1:cx+2, cy-1:cy+2].flatten()
-    # Calculate and return the median value
-    return np.median(neighborhood)
+# def get_median_pixel_value(binary, cx, cy):
+#     # Extract the 3x3 neighborhood around (cx, cy)
+#     neighborhood = binary[cx-1:cx+2, cy-1:cy+2].flatten()
+#     # Calculate and return the median value
+#     return np.median(neighborhood)
 
-def get_id_median(binary):
-    nodes = []
-    signature = []
-
-    with open('keypoints.txt') as file:
-        for line in file:
-            x1, y1, x2, y2, x3, y3, cx, cy = line.split()
-            x = np.array([[int(x1), int(y1)], [int(x2), int(y2)], [int(x3), int(y3)]], np.int32)
-            x.reshape((-1, 1, 2))
-
-            # Get the median pixel value in the 8-point neighborhood around the centroid
-            median_value = get_median_pixel_value(binary, int(cx), int(cy))
-            if median_value >= 128:
-                signature.append(1)
-            else:
-                signature.append(0)
-
-    return signature
-
-# def get_id_old(binary):
-    
-#     # img = cv2.cvtColor(binary, cv2.COLOR_GRAY2BGR)
-#     #blur = cv2.GaussianBlur(gray,(7,7),0)
-#     #cv2.imwrite('blur.png', blur)
-#     # ret, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-
+# def get_id_median(binary):
 #     nodes = []
 #     signature = []
 
-#     with open('keypoints.txt') as file :
-#         for line in file :
+#     with open('keypoints.txt') as file:
+#         for line in file:
 #             x1, y1, x2, y2, x3, y3, cx, cy = line.split()
-#             # nodes.append([[int(x1), int(y1)], [int(x2), int(y2)], [int(x3), int(y3)]])
 #             x = np.array([[int(x1), int(y1)], [int(x2), int(y2)], [int(x3), int(y3)]], np.int32)
-#             x.reshape((-1,1,2))
-            
-#             # print(x[0,2])
-#             # c = calculate_centroid(x)
-#             # cv2.putText(img, 'OR',(0,0),cv2.FONT_HERSHEY_SIMPLEX,1, (0,0,255), 2, cv2.LINE_AA) 
+#             x.reshape((-1, 1, 2))
 
-#             # cv2.circle(img, (int(cx), int(cy)), 4 , (0, 255, 0), cv2.FILLED)
-#             if (binary[int(cx), int(cy)] >= 128):
-#                 #print(c, (int(c[0]), int(c[1])), binary[int(c[0]), int(c[1])])
+#             # Get the median pixel value in the 8-point neighborhood around the centroid
+#             median_value = get_median_pixel_value(binary, int(cx), int(cy))
+#             if median_value >= 128:
 #                 signature.append(1)
-#                 # cv2.putText(img, '1',(int(cx), int(cy)),cv2.FONT_HERSHEY_SIMPLEX,1, (0,0,255), 2, cv2.LINE_AA) 
 #             else:
 #                 signature.append(0)
-#                 # cv2.putText(img, '0',(int(cx), int(cy)),cv2.FONT_HERSHEY_SIMPLEX,1, (0,0,255), 2, cv2.LINE_AA)
-            
-#             # Uncomment the following to draw the mesh
-#             # cv2.imwrite('results/frame.png',cv2.polylines(binary, [x], True, (35, 150, 200), 2))
 
 #     return signature
 

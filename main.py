@@ -13,22 +13,23 @@ import os
 index=[]
 sig=[]
 missed_detection = 0
-with open('grs/output/message_pairs24.json', 'r') as file:
+with open('output/signature_dictionary.json', 'r') as file:
     params = json.load(file)
     for key, value in params.items():
-        # print(key,value["message"])
-        index.append(key)
-        sig.append(value["message"])
-    index=np.array(index)
+        # print(key,len(value))
+        # index.append(key)
+        sig.append(value)
+        # sig.append(value["message"])
+    # index=np.array(index)
     dict_sig=np.array(sig)
 
-# img = cv2.imread('test.png')
 
-# result = detect_tag(img, dict_sig)
+# Iterate through all signatures and orientations
+# for i, signature in enumerate(dict_sig):
+#     print(f"\nSignature {i}:")
+#     for orientation in ['0', '90', '180', '270']:
+#         print(f"Orientation {orientation}°: {signature[orientation]}")
 
-# out_img = draw_tag(img, result)
-
-# cv2.imwrite('output.png', out_img)
 # Process all images in test_images folder
 test_folder = 'test_images'
 for filename in os.listdir(test_folder):
