@@ -134,17 +134,69 @@ class Generalized_Reed_Solomon(basereedsolomon.Base_Reed_Solomon):
         msg = msg[self.num_of_padded_zeros:len(msg)] #+ msg[self.payload_length + self.num_of_padded_zeros:len(msg)]            
         return msg
 
-    def decode(self, recieved_msg):
-        if len(recieved_msg) != (self.message_length):
-            self.helper.debug_print("decode input message",recieved_msg,len(recieved_msg))
-            raise ValueError("Length not as specified")
-        if self.c != 0 :
-            # add conceptual zeros
-            #recieved_msg =  recieved_msg[0:self.payload_length] +([0]*self.num_of_padded_zeros) + recieved_msg[self.payload_length:len(recieved_msg)]
-            recieved_msg = ([0]*self.num_of_padded_zeros) + recieved_msg
-        corrected_msg = self.decode_classic(recieved_msg)
-        self.helper.debug_print("after decode internal",corrected_msg)
-        return self.return_info_symbols(corrected_msg)
+    def decode(self, received):
+        """Main decoding procedure"""
+        # Calculate syndromes
+        syndromes = self.calc_syndrome(received)
+        if all(s == 0 for s in syndromes):
+            return received
+        
+        # Find error locator polynomial
+        error_locator = self.berlekamp_massey(syndromes)
+        
+        # Find error positions
+        error_positions = self.modified_chien_search(error_locator)
+        
+        # Calculate error values
+        error_values = self.forney_algorithm(error_locator, syndromes, error_positions)
+        
+        # Correct errors
+        result = list(received)
+        for i, value in enumerate(error_values):
+            if value != 0:
+                result[i] ^= value
+                
+        return result
+    
+    def berlekamp_massey(self, syndromes):
+        """Fixed Berlekamp-Massey algorithm implementation"""
+        n = len(syndromes)
+        L = 0  # Current error locator polynomial degree
+        C = [1] + [0] * (n - 1)  # Current error locator polynomial
+        B = [1] + [0] * (n - 1)  # Previous error locator polynomial
+        
+        for i in range(n):
+            # Calculate discrepancy with bounds checking
+            delta = syndromes[i]
+            for j in range(1, L + 1):
+                if i - j >= 0 and j < len(C):
+                    delta ^= self.galois_multiply(C[j], syndromes[i - j])
+            
+            # Update polynomials
+            if delta != 0:
+                T = C[:]  # Save current C
+                # Update C with proper length
+                for j in range(len(B)):
+                    idx = i - L + j
+                    if 0 <= idx < len(C):
+                        C[idx] ^= B[j]
+                if 2 * L <= i:
+                    L = i + 1 - L
+                    B = T[:]
+        
+        return C[:L + 1]  # Return valid coefficients
+
+    # def decode(self, recieved_msg):
+    #     if len(recieved_msg) != (self.message_length):
+    #         self.helper.debug_print("decode input message",recieved_msg,len(recieved_msg))
+    #         raise ValueError("Length not as specified")
+    #     if self.c != 0 :
+    #         # add conceptual zeros
+    #         #recieved_msg =  recieved_msg[0:self.payload_length] +([0]*self.num_of_padded_zeros) + recieved_msg[self.payload_length:len(recieved_msg)]
+    #         recieved_msg = ([0]*self.num_of_padded_zeros) + recieved_msg
+    #     corrected_msg = self.decode_classic(recieved_msg)
+    #     self.helper.debug_print("after decode internal",corrected_msg)
+    #     return self.return_info_symbols(corrected_msg)
 
     def encode_classic(self,message):
         #only used in case where self.d != 0
@@ -221,34 +273,83 @@ class Generalized_Reed_Solomon(basereedsolomon.Base_Reed_Solomon):
 
         return output_message
     
-    def decode_classic(self, recieved_msg):
-       
-        syndromes = self.calc_syndrome(recieved_msg)
+    def decode_classic(self, received_msg):
+        """Use fixed BM algorithm for decoding"""
+        try:
+            # Calculate syndromes
+            syndromes = self.calc_syndrome(received_msg)
+            if np.all(syndromes == self.galois_field(0)):
+                return received_msg
+                
+            # Get error locator polynomial
+            error_locator = self.berlekamp_massey(syndromes)
+            
+            # Find error positions using Chien search
+            error_positions = []
+            for i in range(len(received_msg)):
+                # Evaluate error locator at position i
+                sum = 0
+                for j, coeff in enumerate(error_locator):
+                    if coeff != 0:
+                        power = (i * j) % (self.field_size - 1)
+                        term = self.galois_multiply(coeff, 
+                                1 if power == 0 else self.primitive ** power)
+                        sum ^= term
+                if sum == 0:
+                    error_positions.append(i)
+            
+            # Correct errors
+            result = list(received_msg)
+            for pos in error_positions:
+                if pos < len(result):
+                    result[pos] ^= 1
+                    
+            return result
+            
+        except Exception as e:
+            self.helper.debug_print(f"Decoding error: {str(e)}")
+            raise
 
-        if np.all(syndromes == self.galois_field(0)):
-            return recieved_msg
-        self.helper.debug_print("syndromes",syndromes)
+    def galois_multiply(self, x, y):
+        """Multiply two elements in GF(2)"""
+        return (x & y)  # For GF(2), multiplication is AND operation
 
-        galois_lfsr = gl.berlekamp_massey(self.galois_field(syndromes),"galois")
-        error_locator_polynominal = galois_lfsr.feedback_poly
-        error_evaluator_polynominal = gl.Poly(galois_lfsr.state,field =self.galois_field)
-        self.helper.debug_print("berlekamp",galois_lfsr)
-        self.helper.debug_print("error locator poly",error_locator_polynominal)
-        self.helper.debug_print("error evaluator poly",error_evaluator_polynominal)
-    
-        error_locations = self.modified_chien_search(error_locator_polynominal.coeffs[::-1])
-        error_locations_index = [(self.message_length + self.num_of_padded_zeros)- x-1 for x in error_locations] #need to be len(recived msg -1 - location)
-        
-        error_magnitude = self.modified_forney(error_locator_polynominal,error_evaluator_polynominal,error_locations)
-        self.helper.debug_print("err mag",error_magnitude)
-        correction_msg = self.galois_field([0]* len(recieved_msg))
-        for index in range(0,len(error_locations_index)):
-            correction_msg[error_locations_index[index]]  = error_magnitude[index]
+    def galois_power(self, exp):
+        """Calculate power in GF(2)"""  
+        return 1 if exp == 0 else self.primitive ** exp
 
-        self.helper.debug_print("err",error_locations)
+    def galois_inverse(self, x):
+        """Calculate multiplicative inverse in GF(2)"""
+        if x == 0:
+            raise ValueError("Zero has no inverse")
+        return x  # In GF(2), every non-zero element is its own inverse
 
-        return [ int(symbol) for symbol in (self.galois_field(recieved_msg) + correction_msg)]
-    
+
+    def decode_classic(self, received_msg):
+        """Use fixed BM algorithm for decoding"""
+        try:
+            # Calculate syndromes
+            syndromes = self.calc_syndrome(received_msg)
+            if np.all(syndromes == self.galois_field(0)):
+                return received_msg
+                
+            # Get error locator polynomial
+            error_locator = self.berlekamp_massey(syndromes)
+            
+            # Use existing modified_chien_search instead of chien_search
+            error_positions = self.modified_chien_search(error_locator)
+            
+            # Correct errors
+            result = list(received_msg)
+            for pos in error_positions:
+                if pos < len(result):
+                    result[pos] ^= 1
+                    
+            return result
+            
+        except Exception as e:
+            self.helper.debug_print(f"Decoding error: {str(e)}")
+            raise
 
     def primitive_element_adjusted(self,index):
         factor_unity = index % self.p
@@ -311,32 +412,76 @@ class Generalized_Reed_Solomon(basereedsolomon.Base_Reed_Solomon):
     
     # modified version for parallelization
     def modified_chien_search(self,error_locator_poly):
+        """Direct Chien search implementation for GF(2)"""
         error_locations = []
+        n = self.message_length + self.num_of_padded_zeros
         
-        m = (self.message_length +self.num_of_padded_zeros )// self.p 
-        for i in range(0,m):
-            modified_a_values = []
-            for a_index in range(0,self.p):
-                a_i = self.galois_field(0)
-                for j_ai_index in range(0,len(error_locator_poly)): 
-                    if j_ai_index % self.p == a_index:
-                        a_i = a_i + error_locator_poly[j_ai_index] * self.primitive **-(j_ai_index*i) 
-                modified_a_values.append(a_i)
-            ifft = np.fft.ifft(self.galois_field(modified_a_values)) 
-            self.helper.debug_print("modified a",modified_a_values)
-            self.helper.debug_print("ifft_dec",ifft)
-            for w_index in range(0,self.p):     
-                if ifft[w_index] == self.galois_field(0):
-                    error_locations.append(self.p * i + w_index)
+        # Evaluate error locator polynomial at each position
+        for i in range(n):
+            # Calculate sum = error_locator_poly(α^i)
+            sum = self.galois_field(0)
+            for j, coeff in enumerate(error_locator_poly):
+                if coeff != 0:  # Skip zero coefficients
+                    # Calculate α^(i*j) safely
+                    if i*j == 0:
+                        power = 1
+                    else:
+                        power = self.primitive ** (i*j)
+                    sum += coeff * power
+                    
+            # If sum is zero, i is an error location
+            if sum == self.galois_field(0):
+                error_locations.append(i)
+        
+        self.helper.debug_print("Error locations found:", error_locations)
         return error_locations
 
-    def modified_forney(self,error_location_poly,error_evaluator_poly,error_loc):
-        error_magnitudes = []
-        for r in error_loc:
-            a_i = self.primitive_element_adjusted(r)
+    def forney_algorithm(self, error_locator, syndromes, error_positions):
+        """Calculate error values using Forney algorithm over GF(2)"""
+        # For GF(2), error values are always 1 (bit flips)
+        # No need for complex error value calculation
+        error_values = [0] * self.message_length
+        for pos in error_positions:
+            if pos < self.message_length:
+                error_values[pos] = 1
+        return error_values
+
+    def decode(self, received):
+        """Main decoding procedure"""
+        try:
+            # Convert received to GF(2) array
+            received_gf = self.galois_field(received)
             
-            error_magnitudes.append( ( a_i * error_evaluator_poly(a_i**-1))/error_location_poly.derivative()(a_i**-1))
-        return error_magnitudes
+            # Calculate syndromes
+            syndromes = self.calc_syndrome(received_gf)
+            if np.all(syndromes == self.galois_field(0)):
+                return list(received)
+            
+            # Find error locator polynomial
+            error_locator = self.berlekamp_massey(syndromes)
+            
+            # Find error positions
+            error_positions = self.modified_chien_search(error_locator)
+            
+            # For GF(2), just flip bits at error positions
+            result = list(received)
+            for pos in error_positions:
+                if pos < len(result):
+                    result[pos] ^= 1
+                    
+            return result
+            
+        except Exception as e:
+            self.helper.debug_print(f"Decoding error: {str(e)}")
+            raise
+
+    # def modified_forney(self,error_location_poly,error_evaluator_poly,error_loc):
+    #     error_magnitudes = []
+    #     for r in error_loc:
+    #         a_i = self.primitive_element_adjusted(r)
+            
+    #         error_magnitudes.append( ( a_i * error_evaluator_poly(a_i**-1))/error_location_poly.derivative()(a_i**-1))
+    #     return error_magnitudes
         
 
     def return_info_symbols(self,msg):
@@ -393,4 +538,3 @@ class Generalized_Reed_Solomon(basereedsolomon.Base_Reed_Solomon):
 
            
         return output_msg + output_symbols[::-1]
- 

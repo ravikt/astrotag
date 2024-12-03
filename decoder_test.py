@@ -1,21 +1,17 @@
 import random
 from typing import List, Dict
-from rs_codec import ReedSolomonCodec, Generalized_Reed_Solomon
-from file_handler import FileHandler
-from message_generator import generate_unique_binary_strings, binary_string_to_int_list, int_list_to_binary_string, pad_encoded_message
+from grs import Generalized_Reed_Solomon, binary_string_to_int_list, int_list_to_binary_string
+from grs import FileHandler
 
 grs_encoder = Generalized_Reed_Solomon(2, 48, 24, 1, 1, None, False, False)
 
 message="100101101101011001101110"
 # Verify GRS codeword
-# encoded_grs_bits = "010010001110001000011011110110101001000000110111" # last 12 bits are flipped
-encoded_grs_bits = "010010001110001000011011110110101001111111001000"
-
-codeword= "100101101101011001101110110111011111000101110000"
-ref     = "000111111010100110011101101111101111100001010100"
-a       = "000111111010100110011101101111101111100001011100"
-b       = "000111111010100110011101101111101111100001011100"
-
+# encoded_grs_bits = "100101101101011001101110110111011111000101111111"
+encoded_grs_bits = "100101101101011001101110110111011111000101110111"
+# message = "011011100011011110110100"
+# # This message fails with error at last three position
+# encoded_grs_bits = "011011100011011110110100101101001101101010000011"
 
 encoded_grs_int_list = binary_string_to_int_list(encoded_grs_bits)
 decoded_grs = grs_encoder.decode(encoded_grs_int_list)
