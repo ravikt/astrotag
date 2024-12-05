@@ -2,6 +2,39 @@ import cv2
 import numpy as np
 import os
 
+def order_contour(cnt):
+    """
+    Orders the contour points of a quadrilateral in a specific manner.
+    This function takes a contour with four points and reorders them based on their
+    relative positions to the center of the contour. The reordering ensures that the
+    points are arranged in a consistent manner, which can be useful for further
+    processing or analysis.
+    Parameters:
+    cnt (numpy.ndarray): A contour with four points, where each point is represented
+                         as a 2D coordinate (x, y).
+    Returns:
+    numpy.ndarray: The reordered contour points.
+    """
+    # extract x,y coordinates for all the corner points
+    c0_x, c0_y = (cnt[0].ravel())
+    c1_x, c1_y = (cnt[1].ravel())
+    c2_x, c2_y = (cnt[2].ravel())
+    c3_x, c3_y = (cnt[3].ravel())
+
+    # calculate the center of the contour
+    cx = (c0_x + c1_x + c2_x + c3_x) / 4.0
+    cy = (c0_y + c1_y + c2_y + c3_y) / 4.0
+
+    # if the first corner is top left, swap the diagonal
+    if (c0_x <= cx and c0_y <= cy):
+        cnt[[1,3]] = cnt[[3,1]]
+
+    else:
+        cnt[[0,1]] = cnt[[1,0]]
+        cnt[[2,3]] = cnt[[3,2]]
+    
+    return cnt
+
 def read_image(image_path):
     image = cv2.imread(image_path)
     if image is None:
