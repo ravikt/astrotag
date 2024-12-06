@@ -1,7 +1,6 @@
+import cv2
 import numpy as np
-import cv2 
-import matplotlib.pyplot as plt
-
+import os
 
 def order_contour(cnt):
     """
@@ -36,27 +35,6 @@ def order_contour(cnt):
     
     return cnt
 
-# Function to check if a contour is a square
-def is_square(cnt, min_size=200):
-    """
-    Determines if a given contour approximates a square shape.
-    Args:
-        cnt (numpy.ndarray): The contour to be checked, typically obtained from cv2.findContours.
-        min_size (int, optional): The minimum area size of the contour to be considered a square. Defaults to 200.
-    Returns:
-        tuple: (bool, numpy.ndarray) True and the approximated contour if the contour approximates a square shape and meets the size criteria, False otherwise and None.
-    """
-    # Approximate the contour to a polygon
-    epsilon = 0.02 * cv2.arcLength(cnt, True)
-    approx = cv2.approxPolyDP(cnt, epsilon, True)
-    
-    # Check if the contour has 4 vertices, is convex, has a suitable aspect ratio, and meets the size criteria
-    if (len(approx) == 4 and cv2.isContourConvex(approx) and 
-        0.6 <= float(cv2.boundingRect(approx)[2]) / cv2.boundingRect(approx)[3] <= 1.1 and 
-        cv2.contourArea(cnt) > min_size):
-        return True, approx
-    return False, None
-
 def draw_corners(image, corners):
     """
     Draws circles on the corners of the detected square.
@@ -66,56 +44,134 @@ def draw_corners(image, corners):
     cv2.circle(image, np.int_(corners[2].ravel()), 2, (0, 0, 255), 2)
     cv2.circle(image, np.int_(corners[3].ravel()), 2, (255, 128, 0), 2)
 
-def find_squares(img):
-    """
-    Detects and returns the corners of square shapes in the given image.
-    This function converts the input image to grayscale, applies adaptive thresholding 
-    to obtain a binary image, inverts the binary image to detect black borders, and 
-    finds contours in the inverted binary image. It then filters out the contours that 
-    form squares, refines their corner points, and returns the corners of the detected 
-    squares.
-    Args:
-        img (numpy.ndarray): The input image in which squares are to be detected.
-    Returns:
-        list: A list of numpy arrays, each containing the corner points of a detected square.
-    """
-    # Convert the image to grayscale
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # Apply adaptive thresholding to get a binary image
-    binary = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+def read_image(image_path):
+    image = cv2.imread(image_path)
+    if image is None:
+        raise ValueError("Could not read the image")
+    return image
 
-    # Invert the binary image to detect black borders
-    binary_inverted = cv2.bitwise_not(binary)
+def preprocess_image(image):
+    # Convert to grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    # Apply CLAHE
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    enhanced = clahe.apply(gray)
+    # Write enhanced image to file
+    cv2.imwrite('enhanced.png', enhanced)
 
-    # Find contours in the inverted binary image
-    contours, _ = cv2.findContours(binary_inverted, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    return enhanced
+    
 
-    # Placeholder for candidate squares
-    cands = []
+def apply_adaptive_threshold(gradient_magnitude):
+    binary = cv2.adaptiveThreshold(gradient_magnitude, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+    return binary
 
-    # Loop through the contours and filter out the squares
-    for cnt in contours:
+def find_contours(binary):
+    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    return contours
+
+def detect_lines(contour_img):
+    lines = cv2.HoughLinesP(
+        contour_img,
+        rho=1,
+        theta=np.pi / 180,
+        threshold=20,       # Lower threshold to detect more lines
+        minLineLength=10,   # Minimum length of line to detect
+        maxLineGap=5        # Maximum allowed gap between line segments
+    )
+    return lines
+
+def convert_lines_to_cartesian(lines):
+    cartesian_lines = []
+    for line in lines[:8]:  # Consider up to 8 lines
+        x1, y1, x2, y2 = line[0]
+        cartesian_lines.append(((x1, y1), (x2, y2)))
+    return cartesian_lines
+
+def find_parallel_pairs(cartesian_lines):
+    parallel_pairs = []
+    for i in range(len(cartesian_lines)):
+        for j in range(i + 1, len(cartesian_lines)):
+            angle1 = np.arctan2(cartesian_lines[i][1][1] - cartesian_lines[i][0][1],
+                                cartesian_lines[i][1][0] - cartesian_lines[i][0][0])
+            angle2 = np.arctan2(cartesian_lines[j][1][1] - cartesian_lines[j][0][1],
+                                cartesian_lines[j][1][0] - cartesian_lines[j][0][0])
+            angle_diff = abs(angle1 - angle2)
+            if angle_diff < 0.1 or abs(angle_diff - np.pi) < 0.1:
+                parallel_pairs.append((i, j))
+    return parallel_pairs
+
+def detect_quadrilaterals(image):
+    # image = read_image(image_path)
+    # output = image.copy()
+    gray = preprocess_image(image)
+    gradient_magnitude = gray
+    binary = apply_adaptive_threshold(gradient_magnitude)
+    contours = find_contours(binary)
+    detected_quadrilaterals = []
+
+    for idx, contour in enumerate(contours):
         # Criteria for corner refinement
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 40, 0.001)
 
-        # Check if the contour is a square
-        is_square_flag, approx = is_square(cnt)
-        if is_square_flag:
-            # Refine the corner points
-            print(np.float32(approx).shape)
-            corners = cv2.cornerSubPix(gray, np.float32(approx), (5, 5), (-1, -1), criteria)
-            
-            # Order the corners in a consistent manner
-            cnt_corners = order_contour(corners)
+        if cv2.contourArea(contour) < 20:
+            continue
+        contour_img = np.zeros_like(binary)
+        cv2.drawContours(contour_img, [contour], -1, 255, 1)
+        lines = detect_lines(contour_img)
+        if lines is not None and len(lines) >= 4:
+            cartesian_lines = convert_lines_to_cartesian(lines)
+            parallel_pairs = find_parallel_pairs(cartesian_lines)
+            if len(parallel_pairs) >= 2:
+                epsilon = 0.02 * cv2.arcLength(contour, True)
+                approx = cv2.approxPolyDP(contour, epsilon, True)
+                if len(approx) == 4:
+                    rect = cv2.minAreaRect(approx)
+                    width = rect[1][0]
+                    height = rect[1][1]
+                    aspect_ratio = max(width, height) / min(width, height)
+                    if 0.5 < aspect_ratio < 2.0:
+                        corners = cv2.cornerSubPix(gray, np.float32(approx), (5, 5), (-1, -1), criteria)
+            #           Order the corners in a consistent manner
+                        cnt_corners = order_contour(corners)
+                        detected_quadrilaterals.append(cnt_corners)
+                        # cv2.drawContours(output, [approx], -1, (0, 255, 0), 2)
+    # return detected_quadrilaterals, output
+    return detected_quadrilaterals
 
-            # Append the corners to the candidate list
-            cands.append(cnt_corners)
+def draw_results(image_path, save_path=None):
+    try:
+        quads, result_image = detect_quadrilaterals(image_path)
+        print(f"Found {len(quads)} quadrilaterals")
+        if save_path:
+            cv2.imwrite(save_path, result_image)
+            print(f"Results saved to {save_path}")
+        # Return whether quadrilaterals were found along with the image
+        return result_image, len(quads) > 0
+    except Exception as e:
+        print(f"Error processing image: {str(e)}")
+        return None, False
 
-            # Optionally draw the corners on the image for visualization
-            # draw_corners(img, cnt_corners)
-            # cv2.drawContours(img, [cnt_corners], -1, (0, 255, 0), 2)
-            # cv2.imwrite('thesis_marker_contour.png', img)
-            # print(cnt_corners.shape)
+# The main block should be modified to:
+if __name__ == "__main__":
+    input_folder = 'lasrtag_100cm'
+    output_folder = 'results/clahe/'
+    successful_detections = 0
+    total_images = 0
+
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    for filename in os.listdir(input_folder):
+        if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+            total_images += 1
+            input_path = os.path.join(input_folder, filename)
+            output_path = os.path.join(output_folder, f'output_{filename}')
+            _, success = draw_results(input_path, output_path)
+            if success:
+                successful_detections += 1
     
-    return cands
+    print(f"\nSummary: Found quadrilaterals in {successful_detections} out of {total_images} images")
+
