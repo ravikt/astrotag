@@ -25,7 +25,7 @@ with open('output/signature_dictionary.json', 'r') as file:
 
 
 # Process all images in test_images folder
-test_folder = 'test_images'
+test_folder = '/home/ravikt/Downloads/nightly-dev/quad/lasrtag_100cm'
 for filename in os.listdir(test_folder):
     if filename.endswith(('.png', '.jpg', '.jpeg')):
         input_path = os.path.join(test_folder, filename)

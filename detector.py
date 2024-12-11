@@ -149,7 +149,7 @@ def create_tag_dict(marker_image, marker_res):
 
 
 
-def detect_tag(img, dict_sig, allowedMisses=10):
+def detect_tag(img, dict_sig, allowedMisses=20):
     '''
     The function returns all the markers found in the image
     img - color image
