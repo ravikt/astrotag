@@ -1,9 +1,20 @@
 import cv2
 import numpy as np
 import os
-from scipy import signal
 
 def order_contour(cnt):
+    """
+    Orders the contour points of a quadrilateral in a specific manner.
+    This function takes a contour with four points and reorders them based on their
+    relative positions to the center of the contour. The reordering ensures that the
+    points are arranged in a consistent manner, which can be useful for further
+    processing or analysis.
+    Parameters:
+    cnt (numpy.ndarray): A contour with four points, where each point is represented
+                         as a 2D coordinate (x, y).
+    Returns:
+    numpy.ndarray: The reordered contour points.
+    """
     # extract x,y coordinates for all the corner points
     c0_x, c0_y = (cnt[0].ravel())
     c1_x, c1_y = (cnt[1].ravel())
@@ -24,6 +35,16 @@ def order_contour(cnt):
     
     return cnt
 
+def draw_corners(image, corners):
+    """
+    Draws circles on the corners of the detected square.
+    """
+    cv2.circle(image, np.int_(corners[0].ravel()), 2, (255, 0, 0), 2)
+    cv2.circle(image, np.int_(corners[1].ravel()), 2, (0, 255, 0), 2)
+    cv2.circle(image, np.int_(corners[2].ravel()), 2, (0, 0, 255), 2)
+    cv2.circle(image, np.int_(corners[3].ravel()), 2, (255, 128, 0), 2)
+
+
 def read_image(image_path):
     image = cv2.imread(image_path)
     if image is None:
@@ -31,7 +52,7 @@ def read_image(image_path):
     return image
 
 def preprocess_image(image):
-        # Convert to grayscale
+    # Convert to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
     # Apply CLAHE
@@ -41,9 +62,7 @@ def preprocess_image(image):
     cv2.imwrite('enhanced.png', enhanced)
 
     return enhanced
-
     
-
 def apply_adaptive_threshold(gradient_magnitude):
     binary = cv2.adaptiveThreshold(gradient_magnitude, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
     return binary
@@ -100,31 +119,29 @@ def find_parallel_pairs(cartesian_lines):
 
 def detect_quadrilaterals(image):
     # image = read_image(image_path)
-    output = image.copy()
+    # output = image.copy()
     gray = preprocess_image(image)
     gradient_magnitude = gray
     binary = apply_adaptive_threshold(gradient_magnitude)
     cv2.imwrite('binary.png', binary)
-    contours = find_contours(binary)
-    
-    # Criteria for corner refinement
-    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 40, 0.001)
 
+    contours = find_contours(binary)
     detected_quadrilaterals = []
 
     for idx, contour in enumerate(contours):
+        # Criteria for corner refinement
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 40, 0.001)
 
         if cv2.contourArea(contour) < 20:
             continue
         contour_img = np.zeros_like(binary)
-        cv2.drawContours(contour_img, [contour], -1, 255, 1)
+        # cv2.drawContours(contour_img, [contour], -1, 255, 1)
         lines = detect_lines(contour_img)
-        
         if lines is not None and len(lines) >= 4:
             cartesian_lines = convert_lines_to_cartesian(lines)
             parallel_pairs = find_parallel_pairs(cartesian_lines)
             if len(parallel_pairs) >= 2:
-                epsilon = 0.09 * cv2.arcLength(contour, True)
+                epsilon = 0.02 * cv2.arcLength(contour, True)
                 approx = cv2.approxPolyDP(contour, epsilon, True)
                 if len(approx) == 4:
                     rect = cv2.minAreaRect(approx)
@@ -132,22 +149,17 @@ def detect_quadrilaterals(image):
                     height = rect[1][1]
                     aspect_ratio = max(width, height) / min(width, height)
                     if 0.5 < aspect_ratio < 2.0:
-                        corners = cv2.cornerSubPix(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), np.float32(approx), (3,3), (-1,-1),criteria)
+                        corners = cv2.cornerSubPix(gray, np.float32(approx), (5, 5), (-1, -1), criteria)
+            #           Order the corners in a consistent manner
                         cnt_corners = order_contour(corners)
-                        # detected_quadrilaterals.append(corners)
-                        detected_quadrilaterals.append(np.float32(approx))
-
-                        # cv2.drawContours(output, [np.asarray(corners).reshape((4,2)).astype(int)], -1, (0, 255, 0), 2)
+                        detected_quadrilaterals.append(cnt_corners)
                         # cv2.drawContours(output, [approx], -1, (0, 255, 0), 2)
-                        # print("Normal corner:", approx)
-                        # print("Subpixel corner:", corners)
     # return detected_quadrilaterals, output
     return detected_quadrilaterals
 
 def draw_results(image_path, save_path=None):
-    image = read_image(image_path)
     try:
-        quads, result_image = detect_quadrilaterals(image)
+        quads, result_image = detect_quadrilaterals(image_path)
         print(f"Found {len(quads)} quadrilaterals")
         if save_path:
             cv2.imwrite(save_path, result_image)

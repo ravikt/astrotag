@@ -2,18 +2,10 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-# def equalSig(sig1, sig2, allowedMisses=0):
-#     # global missed_number
-#     misses = 0
-#     # missed_number = 0
-#     for i in range(len(sig1)):
-        
-#         if sig1[i] != sig2[i]:
-#             misses = misses + 1
-
-#     # print('misses:', misses)
-#     return misses#<=allowedMisses
-#     # return missed_number
+def hamming_distance(str1, str2):
+    if len(str1) != len(str2):
+        raise ValueError("Strings must be of equal length")
+    return sum(c1 != c2 for c1, c2 in zip(str1, str2))
 
 def equalSig(sig1, sig2):
     """Calculate Hamming distance between two binary strings"""

@@ -16,47 +16,41 @@ world_loc = []
 data = {}
 
 
-# def decode_msg(encoded_grs_bits):
-#     encoded_grs_int_list = binary_string_to_int_list(encoded_grs_bits)
-#     decoded_grs = grs_encoder.decode(encoded_grs_int_list)
-#     decoded_grs_bits = int_list_to_binary_string(decoded_grs)
-#     message = decoded_grs_bits[:24]
-
-#     return message
-
-
 for i in range(num_markers):
-    marker_path = 'marker/marker_{}.png'.format(i)
+    marker_path = f'marker/marker_{i}.png'
 
+    # Read and rotate markers
     marker = cv2.imread(marker_path, cv2.IMREAD_GRAYSCALE)
     marker_90 = cv2.rotate(marker, cv2.ROTATE_90_CLOCKWISE)
     marker_180 = cv2.rotate(marker, cv2.ROTATE_180)
     marker_270 = cv2.rotate(marker, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
-    # encoded_grs_bits_0 = ''.join(map(str, get_id(marker)))
-    # encoded_grs_bits_90 = ''.join(map(str, get_id(marker_90)))
-    # encoded_grs_bits_180 = ''.join(map(str, get_id(marker_180)))
-    # encoded_grs_bits_270 = ''.join(map(str, get_id(marker_270)))
+    # Define world points for each orientation
+    world_points = {
+        "0": np.float32([[0,0,0], [30,0,0], [30,30,0], [0,30,0]]),
+        "90": np.float32([[0,30,0], [0,0,0], [30,0,0], [30,30,0]]),
+        "180": np.float32([[30,30,0], [0,30,0], [0,0,0], [30,0,0]]),
+        "270": np.float32([[30,0,0], [30,30,0], [0,30,0], [0,0,0]])
+    }
 
-    # message_0 = decode_msg(encoded_grs_bits_0)
-    # message_90 = decode_msg(encoded_grs_bits_90)
-    # message_180 = decode_msg(encoded_grs_bits_180)
-    # message_270 = decode_msg(encoded_grs_bits_270)
-    message_0 = ''.join(map(str, get_id(marker)))
-    message_90 = ''.join(map(str, get_id(marker_90)))
-    message_180 = ''.join(map(str, get_id(marker_180)))
-    message_270 =''.join(map(str, get_id(marker_270)))
+    # Get signatures for each rotation
+    signatures = {
+        "0": ''.join(map(str, get_id(marker))),
+        "90": ''.join(map(str, get_id(marker_90))),
+        "180": ''.join(map(str, get_id(marker_180))),
+        "270": ''.join(map(str, get_id(marker_270)))
+    }
 
-
+    # Store both signature and world points
     data[str(i)] = {
-            "0": message_0,
-            "90": message_90,
-            "180": message_180,
-            "270": message_270
+        angle: {
+            "signature": signatures[angle],
+            "world_points": world_points[angle].tolist()
         }
+        for angle in ["0", "90", "180", "270"]
+    }
 
-
-output_file='signature_dictionary.json'
-
+# Save to JSON
+output_file = 'new_dictionary.json'
 FileHandler.save_to_json(data, output_file)
-print(f"Data saved to {output_file}")
+print(f"Dictionary saved to {output_file}")
