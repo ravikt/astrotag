@@ -20,7 +20,7 @@ objp[0,:,:2] = np.mgrid[0:CHECKERBOARD[0], 0:CHECKERBOARD[1]].T.reshape(-1, 2)
 prev_img_shape = None
  
 # Extracting path of individual image stored in a given directory
-images = glob.glob('./cam_calib/raw/*.png')
+images = glob.glob('/home/ravikt/Desktop/videos/spacecraft/calib_data/*.png')
 count = 0
 for fname in images:
     count = count + 1
@@ -62,7 +62,7 @@ data = {
         "translation_vect":tvecs.tolist()
         }
 
-with open("camera_intrinsic_astrotag.json",'w' ) as f:
+with open("camera_intrinsic_lasrtag.json",'w' ) as f:
     json.dump(data, f, indent=4)
     
 

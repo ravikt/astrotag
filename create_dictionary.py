@@ -1,35 +1,56 @@
 import cv2
-import json
 import numpy as np
 from detector import create_tag_dict
+from read_sig import get_id
+# from grs import Generalized_Reed_Solomon, binary_string_to_int_list, int_list_to_binary_string
+from grs import FileHandler
+
+
 
 num_markers = 20
 signature = []
 world_loc = []
 
+# grs_encoder = Generalized_Reed_Solomon(2, 48, 24, 1, 1, None, False, False)
+
+data = {}
+
+
 for i in range(num_markers):
-    marker_path = 'marker/thesis_b_marker_{}.png'.format(i)
+    marker_path = f'marker/marker_{i}.png'
 
-    marker = cv2.imread(marker_path)
+    # Read and rotate markers
+    marker = cv2.imread(marker_path, cv2.IMREAD_GRAYSCALE)
+    marker_90 = cv2.rotate(marker, cv2.ROTATE_90_CLOCKWISE)
+    marker_180 = cv2.rotate(marker, cv2.ROTATE_180)
+    marker_270 = cv2.rotate(marker, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
-    dict_sig, dict_world_loc = create_tag_dict(marker, 700)
+    # Define world points for each orientation
+    world_points = {
+        "0": np.float32([[0,0,0], [30,0,0], [30,30,0], [0,30,0]]),
+        "90": np.float32([[0,30,0], [0,0,0], [30,0,0], [30,30,0]]),
+        "180": np.float32([[30,30,0], [0,30,0], [0,0,0], [30,0,0]]),
+        "270": np.float32([[30,0,0], [30,30,0], [0,30,0], [0,0,0]])
+    }
 
-    signature.append(dict_sig)
-    world_loc.append(dict_world_loc)
+    # Get signatures for each rotation
+    signatures = {
+        "0": ''.join(map(str, get_id(marker))),
+        "90": ''.join(map(str, get_id(marker_90))),
+        "180": ''.join(map(str, get_id(marker_180))),
+        "270": ''.join(map(str, get_id(marker_270)))
+    }
 
-# print(len(signature))
-# print(len(world_loc))
+    # Store both signature and world points
+    data[str(i)] = {
+        angle: {
+            "signature": signatures[angle],
+            "world_points": world_points[angle].tolist()
+        }
+        for angle in ["0", "90", "180", "270"]
+    }
 
-# print('Marker signature')
-# print(signature[0][0])
-
-index = np.array(list(range(0, num_markers)))
-world_loc =np.array(world_loc)
-signature = np.array(signature)    
-data = {
-    "index": index.tolist(),
-    "dict_sig": signature.tolist(),
-    "dict_world_loc": world_loc.tolist()
-}
-with open('lasrtag_dictionary.json', 'w') as marker_dict:
-    json.dump(data, marker_dict, indent=1)
+# Save to JSON
+output_file = 'new_dictionary.json'
+FileHandler.save_to_json(data, output_file)
+print(f"Dictionary saved to {output_file}")

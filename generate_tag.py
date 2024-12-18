@@ -3,7 +3,7 @@ import random
 import numpy as np
 import cv2
 import os
-from mesh import solid_triangle, generate_seed_points, draw_delaunay, draw_point
+from mesh import solid_triangle, draw_delaunay, draw_point
 
 
 img = np.zeros((700,700,3), np.uint8)
