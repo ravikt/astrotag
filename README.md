@@ -3,7 +3,7 @@
 
 This repository contains the implementation of proposed fiducial marker. The marker template is derived from square spidron. The encoding is inside the marker is based on mesh triangles generated using Delaunay traingulation.  
 
-<img src="images/astrotag.png" width="600">
+<img src="images/enhanced.png" width="600">
 
 The marker pose is computed using OpenCV's implementation of PnP solver. The fiducial marker uses superimposition of mesh for computing the binary descriptor. 
 

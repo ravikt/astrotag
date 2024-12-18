@@ -36,7 +36,7 @@ def draw_tag(img, res):
 
 def drawAxesWithPose(img, res):
     
-    with open('camera_utils/camera_intrinsic.json', 'r') as camera_data:
+    with open('camera_utils/camera_intrinsic_lasrtag.json', 'r') as camera_data:
         camera_params = json.load(camera_data)
 
     mtx = np.array(camera_params["camera_matrix"], dtype="double")
@@ -75,7 +75,7 @@ def drawAxesWithPose(img, res):
     return img
 
 def drawPoseCube(img, res):
-    with open('camera_utils/camera_intrinsic.json', 'r') as camera_data:
+    with open('camera_utils/camera_intrinsic_lasrtag.json', 'r') as camera_data:
         camera_params = json.load(camera_data)
 
     mtx = np.array(camera_params["camera_matrix"], dtype="double")
@@ -101,13 +101,13 @@ def drawPoseCube(img, res):
 
         # Draw bottom square
         for j in range(4):
-            cv2.line(img, tuple(img_pts[j][0]), tuple(img_pts[(j+1)%4][0]), (0,255,0), 2)
+            cv2.line(img, tuple(img_pts[j][0]), tuple(img_pts[(j+1)%4][0]), (255,0,0), 2)
         # Draw top square
         for j in range(4):
             cv2.line(img, tuple(img_pts[j+4][0]), tuple(img_pts[(j+1)%4+4][0]), (0,255,0), 2)
         # Draw vertical lines
         for j in range(4):
-            cv2.line(img, tuple(img_pts[j][0]), tuple(img_pts[j+4][0]), (0,255,0), 2)
+            cv2.line(img, tuple(img_pts[j][0]), tuple(img_pts[j+4][0]), (0,0,255), 2)
 
         cv2.putText(img, str(idx), tuple(img_pts[0][0]), cv2.FONT_HERSHEY_SIMPLEX, 
                     color=(0, 255, 255), thickness=2, fontScale=0.7)
