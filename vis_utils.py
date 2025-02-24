@@ -57,7 +57,7 @@ def drawAxesWithPose(img, res):
         # Find the rotation and translation vectors.
         # ret, rvecs, tvecs = cv2.solvePnP(dict_world_loc[idx][rot_idx], corner, mtx, dist)
         ret, rvecs, tvecs = cv2.solvePnP(world_loc, corner, mtx, dist)
-
+        #print(rvecs, rvecs.dtype, tvecs, tvecs.dtype )
 
         # draw axis on the marker
         # project points from marker coordinate system in the image coordinate system 
@@ -94,6 +94,8 @@ def drawPoseCube(img, res):
 
         corner = np.asarray(corner).reshape((4,2)).astype('float32')
         ret, rvecs, tvecs = cv2.solvePnP(world_loc, corner, mtx, dist)
+
+        print(rvecs, rvecs.dtype, tvecs, tvecs.dtype)
 
         # Project cube points to image plane
         img_pts, _ = cv2.projectPoints(cube_points, rvecs, tvecs, mtx, dist)
