@@ -1,10 +1,10 @@
 import cv2
 import numpy as np
 from detector import create_tag_dict
-from read_sig import get_id
+from read_sig import get_keypoints, get_id
 # from grs import Generalized_Reed_Solomon, binary_string_to_int_list, int_list_to_binary_string
 from grs import FileHandler
-
+from custom_descriptor.fk_desc import fk_combined
 
 
 num_markers = 20
@@ -14,6 +14,7 @@ world_loc = []
 # grs_encoder = Generalized_Reed_Solomon(2, 48, 24, 1, 1, None, False, False)
 
 data = {}
+keypoints = get_keypoints('keypoints.txt')
 
 
 for i in range(num_markers):
@@ -34,11 +35,20 @@ for i in range(num_markers):
     }
 
     # Get signatures for each rotation
+    # signatures = {
+    #     "0": ''.join(map(str, get_id(marker))),
+    #     "90": ''.join(map(str, get_id(marker_90))),
+    #     "180": ''.join(map(str, get_id(marker_180))),
+    #     "270": ''.join(map(str, get_id(marker_270)))
+    # }
+
+
+    # Get signatures for each rotation using Fixed Keypoint Descriptor
     signatures = {
-        "0": ''.join(map(str, get_id(marker))),
-        "90": ''.join(map(str, get_id(marker_90))),
-        "180": ''.join(map(str, get_id(marker_180))),
-        "270": ''.join(map(str, get_id(marker_270)))
+        "0": ''.join(fk_combined(marker, keypoints).astype(str).flatten()),
+        "90": ''.join(fk_combined(marker_90, keypoints).astype(str).flatten()),
+        "180": ''.join(fk_combined(marker_180, keypoints).astype(str).flatten()),
+        "270": ''.join(fk_combined(marker_270, keypoints).astype(str).flatten())
     }
 
     # Store both signature and world points
@@ -51,6 +61,6 @@ for i in range(num_markers):
     }
 
 # Save to JSON
-output_file = 'new_dictionary.json'
+output_file = 'fk_dictionary.json'
 FileHandler.save_to_json(data, output_file)
 print(f"Dictionary saved to {output_file}")

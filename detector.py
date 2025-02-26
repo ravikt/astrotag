@@ -1,8 +1,9 @@
 import numpy as np
 import cv2 
 import matplotlib.pyplot as plt
-from read_sig import get_id, hamming_distance
+from read_sig import get_id, hamming_distance, get_keypoints
 from quadrilateral import detect_quadrilaterals
+from custom_descriptor.fk_desc import fk_combined
 # from grs.rs_codec import Generalized_Reed_Solomon
 # from grs.message_generator import binary_string_to_int_list,int_list_to_binary_string
 # from grs import Generalized_Reed_Solomon, binary_string_to_int_list, int_list_to_binary_string
@@ -36,8 +37,13 @@ def get_contour_bits(img, cnt, bits):
     # print(binary.shape)
     cv2.imwrite('marker_warpedthresh.png', binary)
     
-#     # Calculate the marker bits
-    sig_id = get_id(binary)
+#     # Calculate the marker signature suing mask based method
+    # sig_id = get_id(binary)
+
+    # Calculate the marker signature using FK descriptor
+    keypoints = get_keypoints('keypoints.txt')
+    fk_descriptor = fk_combined(binary, keypoints)
+    sig_id = ''.join(fk_descriptor.astype(str).flatten())
     # print(sig_id)
     # cv2.imwrite('out.png', ret_img)
 
@@ -77,7 +83,7 @@ def create_tag_dict(marker_image, marker_res):
 
 
 
-def detect_tag(img, dict_sig, allowedMisses=5):
+def detect_tag(img, dict_sig, allowedMisses=1000):
     '''
     The function returns all the markers found in the image
     img - color image
@@ -102,7 +108,7 @@ def detect_tag(img, dict_sig, allowedMisses=5):
             for orientation in ['0', '90', '180', '270']:
                 message = dictionary[orientation]["signature"]
                 m = hamming_distance(encoded_bits, message)
-                # print("hamming distance:",m)
+                print("hamming distance:",m)
                 if (m <= allowedMisses):
                     print('match')
                     result["corner"].append(cands[cant_num])

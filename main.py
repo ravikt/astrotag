@@ -13,7 +13,7 @@ import os
 index=[]
 sig=[]
 missed_detection = 0
-with open('output/new_dictionary.json', 'r') as file:
+with open('output/fk_dictionary.json', 'r') as file:
     params = json.load(file)
     # world_loc = np.array(params["world_points"])
     for key, value in params.items():   

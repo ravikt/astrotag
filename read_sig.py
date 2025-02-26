@@ -2,6 +2,19 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
+def get_keypoints(filename, scale=1.0):
+    keypoints = []
+
+    with open(filename) as file:
+        for line in file:
+            x1, y1, x2, y2, x3, y3, cx, cy = line.split()
+            # Convert string coordinates to float and scale them
+            keypoints.append((float(x1) * scale, float(y1) * scale))
+            keypoints.append((float(x2) * scale, float(y2) * scale))
+            keypoints.append((float(x3) * scale, float(y3) * scale))
+
+    return keypoints
+
 def hamming_distance(str1, str2):
     if len(str1) != len(str2):
         raise ValueError("Strings must be of equal length")
