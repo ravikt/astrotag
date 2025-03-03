@@ -47,3 +47,5 @@ for filename in os.listdir(test_folder):
         os.makedirs('results', exist_ok=True)
         cv2.imwrite(output_path, out_img)
         
+
+print("Missed detections:", missed_detection)

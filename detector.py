@@ -93,7 +93,8 @@ def detect_tag(img, dict_sig, allowedMisses=1000):
     '''
     result = {"corner":[],"index":[], "world_loc":[]}
     # grs_encoder = Generalized_Reed_Solomon(2, 48, 24, 1, 1, None, False, False)
-    count = 1
+    # 0 = missed, 1 = detected
+    count = 0
     # Placeholder for collecting missed bits - m
     cands = detect_quadrilaterals(img)
     # print("Length of candidate contours and dictionary: ",len(cands), len(dict_sig))
@@ -108,15 +109,16 @@ def detect_tag(img, dict_sig, allowedMisses=1000):
             for orientation in ['0', '90', '180', '270']:
                 message = dictionary[orientation]["signature"]
                 m = hamming_distance(encoded_bits, message)
-                print("hamming distance:",m)
+                # print("hamming distance:",m)
                 if (m <= allowedMisses):
                     print('match')
                     result["corner"].append(cands[cant_num])
                     result["index"].append((idx))
                     result["world_loc"].append(dictionary[orientation]["world_points"])
     
-    if len(result['index'])==19:
-        count=0
+    if len(result['index']) > 0 and 19 in result['index']:
+        count=1
+        
     return result, count
     # return(len(cands))
 
